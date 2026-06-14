@@ -8,7 +8,7 @@ Phase 1 — Foundation (In Progress)
 
 ## Current Goal
 
-Scaffold agent cron route and remaining lib structure.
+Implement `fetch_watchlist_news` tool and Zod schemas.
 
 ## Completed
 
@@ -21,6 +21,12 @@ Scaffold agent cron route and remaining lib structure.
   - First migration: `lib/db/migrations/0000_odd_puma.sql` — applied to Neon (June 14, 2026). All 6 tables + 5 indexes verified.
   - npm scripts: `db:generate`, `db:migrate`.
   - `.env.local` placeholder created (gitignored via `.env*`).
+- **Agent scaffold** (June 14, 2026):
+  - `lib/agent/env.ts` — Zod-validated env (6 required vars, throws on missing).
+  - `lib/agent/verify-qstash.ts` — QStash `Receiver` signature verification helper.
+  - `GET /api/health` — returns `{ status: 'ok', timestamp }`.
+  - `POST /api/cron/morning-briefing` — QStash-protected stub, returns `{ ok: true }`.
+  - Dependencies: `zod`, `@upstash/qstash`.
 
 ## In Progress
 
@@ -28,16 +34,15 @@ Scaffold agent cron route and remaining lib structure.
 
 ## Next Up
 
-1. Initialize remaining repository structure (`lib/agent/`, `lib/schemas/`, `components/`).
-2. Scaffold agent: QStash verification, `/api/cron/morning-briefing` API route (stub).
-3. Implement `fetch_watchlist_news` tool (Finnhub API, typed output, Zod-validated).
-4. Implement `extract_relationships` tool (Vercel AI SDK `generateObject`, GPT-4.1-mini, Zod schema).
-5. Implement `store_relationships` tool (Drizzle insert, `userId` scoped).
-6. Wire up QStash cron → agent → Resend email delivery end to end.
-7. Set up Clerk auth on Next.js dashboard.
-8. Build dashboard pages: overview, relationship graph (React Flow), briefing history, watchlist management, settings.
-9. Seed demo data and build demo mode (read-only Clerk account).
-10. Build public landing page.
+1. Initialize remaining repository structure (`lib/schemas/`, `components/`).
+2. Implement `fetch_watchlist_news` tool (Finnhub API, typed output, Zod-validated).
+3. Implement `extract_relationships` tool (Vercel AI SDK `generateObject`, GPT-4.1-mini, Zod schema).
+4. Implement `store_relationships` tool (Drizzle insert, `userId` scoped).
+5. Wire up QStash cron → agent → Resend email delivery end to end.
+6. Set up Clerk auth on Next.js dashboard.
+7. Build dashboard pages: overview, relationship graph (React Flow), briefing history, watchlist management, settings.
+8. Seed demo data and build demo mode (read-only Clerk account).
+9. Build public landing page.
 
 ## Open Questions
 
@@ -67,6 +72,7 @@ Scaffold agent cron route and remaining lib structure.
 ## Session Notes
 
 - Drizzle schema implemented (June 14, 2026). Migration `lib/db/migrations/0000_odd_puma.sql` applied to Neon — all tables and indexes verified.
+- Agent scaffold implemented (June 14, 2026). Routes verified: `GET /api/health` → 200, unsigned cron → 401, signed cron → 200.
 - Context files created in one session from the grill interview (June 11, 2026).
 - Root spec document: `financial-researcher-agent.md` — all implementation must align with it.
 - The `02-extract-relationships-tool-spec.md` (Zod schemas + system prompt) is the highest-leverage next document to write before implementation starts — everything downstream depends on what that tool returns.
