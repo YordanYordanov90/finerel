@@ -26,7 +26,7 @@ jobs:
             > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
 
-      - name: Run AI Review (xAI grok-4.20-0309-non-reasoning)
+      - name: Run AI Review (xAI grok-4.3)
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: |
