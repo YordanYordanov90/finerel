@@ -28,7 +28,7 @@ employers reviewing the portfolio.
 
 ### Routing
 
-- Public route — no auth required (defined in `09-auth.md` middleware).
+- Public route — no auth required (defined in `09-auth.md` proxy).
 - Uses a `(landing)` route group with its own layout (no sidebar).
 - Project-overview.md success criterion: "A first-time visitor understands the
   product and explores the demo in under 2 minutes."
