@@ -13,8 +13,8 @@ Update this file after every meaningful implementation change.
 | 05 | [Store Relationships & Email Delivery](features/05-store-and-push.md) | ✅ Done |
 | 06 | [API Routes: Watchlist](features/06-api-routes-watchlist.md) | ✅ Done |
 | 07 | [API Routes: Read-Only Data](features/07-api-routes-read.md) | ✅ Done |
-| 08 | [API Routes: Settings](features/08-api-routes-settings.md) | ⬜ Pending |
-| 09 | [Clerk Authentication & Demo Mode](features/09-auth.md) | ⬜ Pending |
+| 08 | [API Routes: Settings](features/08-api-routes-settings.md) | ✅ Done |
+| 09 | [Clerk Authentication & Demo Mode](features/09-auth.md) | ✅ Done |
 | 10 | [App Shell (Sidebar, Navbar, Layout)](features/10-app-shell.md) | ⬜ Pending |
 | 11 | [Overview Page](features/11-overview-page.md) | ⬜ Pending |
 | 12 | [Relationship Graph Page](features/12-graph-page.md) | ⬜ Pending |
@@ -24,7 +24,7 @@ Update this file after every meaningful implementation change.
 | 16 | [Landing Page](features/16-landing-page.md) | ⬜ Pending |
 | 17 | [Demo Data Seeding](features/17-demo-seeding.md) | ⬜ Pending |
 
-**Progress: 7 / 17 features complete**
+**Progress: 9 / 17 features complete**
 
 ---
 
@@ -34,7 +34,7 @@ Phase 1 — Foundation (In Progress)
 
 ## Current Goal
 
-Complete Clerk auth (feature 09) and settings API routes (feature 08).
+Build dashboard app shell and pages (features 10–15).
 
 ## Completed
 
@@ -77,7 +77,7 @@ Complete Clerk auth (feature 09) and settings API routes (feature 08).
   - `POST /api/watchlist` — add ticker (Zod validation, duplicate check, `201`).
   - `DELETE /api/watchlist/[ticker]` — ownership-scoped delete.
   - `lib/auth.ts` — `isDemoUser()` helper; demo user blocked from POST/DELETE (`403`).
-  - Minimal Clerk setup added as dependency: `@clerk/nextjs`, `ClerkProvider` in layout, `middleware.ts` with public routes (`/`, `/demo`, `/api/health`, `/api/webhooks/clerk`, `/api/cron/*`).
+  - Minimal Clerk setup added as dependency: `@clerk/nextjs`, `ClerkProvider` in layout, `proxy.ts` with public routes (`/`, `/demo`, `/api/health`, `/api/webhooks/clerk`, `/api/cron/*`).
   - All routes return `{ data }` / `{ error }` envelope; `userId` from `auth()` only.
 - **Read-only API routes** (June 23, 2026):
   - `lib/schemas/api-params.ts` — `relationshipsQuerySchema` (ticker, relationType, minConfidence, date range, pagination), `briefingsQuerySchema` (pagination). Uses `z.coerce` for numeric query params.
@@ -85,6 +85,18 @@ Complete Clerk auth (feature 09) and settings API routes (feature 08).
   - `GET /api/briefings` — paginated briefing history sorted by `briefingDate DESC`; returns `id`, `summary`, `itemsProcessed`, `relationshipsFound`, `briefingDate`, `createdAt`.
   - `GET /api/graph` — returns `{ nodes, edges }` for React Flow. Nodes are deduplicated companies with `isWatchlist` flag from user's watchlist. Each relationship is a separate edge with `relationType`, `confidence`, `impactLevel`, `contextSnippet`, `sourceUrl`.
   - All routes: auth-gated (`401`), `userId`-scoped queries, `{ data }` / `{ error }` envelope, strictly read-only (no INSERT/UPDATE/DELETE).
+- **Settings API route** (June 23, 2026):
+  - `GET /api/settings` — returns `{ data: { briefingTime: string } }` from `users` table, scoped by `userId`.
+  - Read-only in MVP; demo user `GET` works normally (no mutations).
+  - Auth-gated (`401`), `404` if user row missing, `{ data }` / `{ error }` envelope.
+- **Clerk authentication & demo mode** (June 23, 2026):
+  - Clerk app: `classic-manatee-95` (Clerk Dashboard instance slug).
+  - `proxy.ts` — `clerkMiddleware` + `createRouteMatcher` public routes: `/`, `/demo`, `/api/health`, `/api/webhooks/clerk`, `/api/cron/*`, `/sign-in`, `/sign-up`. All other routes require auth (redirect to sign-in).
+  - `lib/auth.ts` — `isDemoUser()` compares `userId` to `DEMO_USER_ID` env var.
+  - `app/sign-in/[[...sign-in]]/page.tsx` + `app/sign-up/[[...sign-up]]/page.tsx` — Clerk hosted components.
+  - `POST /api/webhooks/clerk` — Svix signature verification via `verifyWebhook`, Zod-validated `user.created` payload, inserts `users` row (empty watchlist by default), idempotent via `onConflictDoNothing`.
+  - `lib/schemas/clerk-webhook.ts` — `clerkUserCreatedEventSchema`, `getPrimaryEmail()` helper.
+  - Env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`, `DEMO_USER_ID`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`.
 
 ## In Progress
 
@@ -92,11 +104,10 @@ Complete Clerk auth (feature 09) and settings API routes (feature 08).
 
 ## Next Up
 
-1. Complete Clerk auth: webhook, sign-in/sign-up pages — feature 09.
-2. API routes: settings (feature 08).
-3. Build dashboard pages: overview, relationship graph (React Flow), briefing history, watchlist management, settings — features 10–15.
-4. Seed demo data and build demo mode (read-only Clerk account) — feature 17.
-5. Build public landing page — feature 16.
+1. Build app shell (sidebar, navbar, layout) — feature 10.
+2. Build dashboard pages: overview, relationship graph (React Flow), briefing history, watchlist management, settings — features 11–15.
+3. Seed demo data and configure `DEMO_USER_ID` for read-only demo account — feature 17.
+4. Build public landing page — feature 16.
 
 ## Open Questions
 
@@ -127,8 +138,10 @@ Complete Clerk auth (feature 09) and settings API routes (feature 08).
 
 ## Session Notes
 
+- Clerk auth implemented (June 23, 2026). Webhook onboarding, sign-in/sign-up pages, `proxy.ts` public route list, `isDemoUser()` helper. Set `CLERK_WEBHOOK_SIGNING_SECRET` and `DEMO_USER_ID` in Vercel before going live.
+- Settings API route implemented (June 23, 2026). `GET /api/settings` returns user `briefingTime`; read-only, demo-friendly.
 - Read-only API routes implemented (June 23, 2026). `GET /api/relationships` (filtered + paginated), `GET /api/briefings` (paginated), `GET /api/graph` (React Flow nodes/edges with `isWatchlist` flag). Response shapes documented in Completed section for frontend reference.
-- Watchlist API routes implemented (June 22, 2026). `GET/POST /api/watchlist`, `DELETE /api/watchlist/[ticker]`. Minimal Clerk middleware + `isDemoUser()` added; full auth (webhook, sign-in) still pending in feature 09.
+- Watchlist API routes implemented (June 22, 2026). `GET/POST /api/watchlist`, `DELETE /api/watchlist/[ticker]`. Minimal Clerk proxy + `isDemoUser()` added; full auth (webhook, sign-in) still pending in feature 09.
 - Full morning briefing pipeline wired (June 22, 2026). `fetch → extract → store → email` in `app/api/cron/morning-briefing/route.ts`. Build passes. Live run requires seeded user/watchlist and Resend domain verification.
 - `extract_relationships` implemented (June 22, 2026). Schema file at `lib/schemas/relationships.ts`, tool at `lib/agent/tools/extract-relationships.ts`. Build passes. Live model behavior (confidence distribution, edge cases) pending first end-to-end cron run.
 - Drizzle schema implemented (June 14, 2026). Migration `lib/db/migrations/0000_odd_puma.sql` applied to Neon — all tables and indexes verified.

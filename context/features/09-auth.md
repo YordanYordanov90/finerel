@@ -16,7 +16,7 @@ Clerk webhook for new user onboarding.
 
 | Path | Purpose |
 |---|---|
-| `middleware.ts` | Next.js middleware with Clerk auth |
+| `proxy.ts` | Next.js proxy with Clerk auth |
 | `lib/auth.ts` | `isDemoUser()` helper and auth utility functions |
 | `app/api/webhooks/clerk/route.ts` | Clerk webhook handler for `user.created` |
 | `.env.local` update | Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `DEMO_USER_ID` |
@@ -31,7 +31,7 @@ Clerk webhook for new user onboarding.
 - `ClerkProvider` wrapping the root layout.
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` in environment.
 
-### Middleware (from code-standards.md, project-overview.md)
+### Proxy (from code-standards.md, project-overview.md)
 
 - Public routes (no auth required):
   - `/` — landing page
