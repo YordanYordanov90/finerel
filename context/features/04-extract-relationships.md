@@ -47,7 +47,7 @@ via `z.infer` — never duplicate type definitions (code-standards.md).
 ### AI SDK Integration (from core-intelligence-spec.md §4, architecture.md)
 
 - Use `generateObject` from `ai` package (Vercel AI SDK).
-- Model: `openai('gpt-4.1-mini')` from `@ai-sdk/openai`.
+- Model: `models.extraction` from `lib/models.ts` (default: `gpt-4.1-mini`). Never instantiate providers in tool files.
 - Architecture.md decision: "Vercel AI SDK everywhere.
   generateObject + Zod for extract_relationships. Provider-agnostic — switching
   model is one line."

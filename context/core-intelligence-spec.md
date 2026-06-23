@@ -29,10 +29,11 @@ if a field is added to the schema, the prompt must explain how to populate it.
 ## Runtime Context
 
 - **SDK:** Vercel AI SDK `generateObject`
-- **Model:** `openai('gpt-4.1-mini')`
+- **Model:** `models.extraction` from `lib/models.ts` (default: `gpt-4.1-mini`)
 - **Validation:** Zod (strict schemas, no `.passthrough()`)
 - **Location:** `lib/agent/tools/extract-relationships.ts`
 - **Schema location:** `lib/schemas/relationships.ts` (shared with dashboard)
+- **Model config:** `lib/models.ts` (centralized — all model selections live here)
 
 ---
 
@@ -213,7 +214,7 @@ Return all relationships found. If an article contains no clear relationship bet
 // lib/agent/tools/extract-relationships.ts
 
 import { generateObject } from 'ai'
-import { openai } from '@ai-sdk/openai'
+import { models } from '@/lib/models'
 import {
   extractionInputSchema,
   extractionOutputSchema,
@@ -228,7 +229,7 @@ export async function extractRelationships(
   const input = extractionInputSchema.parse(rawInput)
 
   const { object } = await generateObject({
-    model: openai('gpt-4.1-mini'),
+    model: models.extraction,
     schema: extractionOutputSchema,
     system: SYSTEM_PROMPT,         // string constant defined in this file
     prompt: buildExtractionPrompt(input),
