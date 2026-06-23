@@ -43,6 +43,7 @@
 - QStash signature verification is the first line of every cron handler — reject with 401 before any work runs.
 - All tool inputs and outputs are validated with Zod schemas — `lib/schemas/` is the single source of truth.
 - Use Vercel AI SDK `generateObject` for all LLM calls — never call the OpenAI SDK directly.
+- Import model references from `lib/models.ts` — never instantiate `openai()` or any provider in tool files. All model selection lives in one place.
 - The OpenAI API key is read from `process.env.OPENAI_API_KEY` — never hardcoded, never logged.
 - Tool execution errors are caught and logged — a single failed tool call must not crash the entire briefing run.
 - Keep the agent loop deliberately small: fetch → extract → store → push. No speculative extra steps.
@@ -70,6 +71,7 @@
 - `app/` — Next.js App Router pages and layouts.
 - `app/api/` — API route handlers (read-only for relationships/briefings).
 - `lib/db/` — Drizzle schema, migrations, and typed query helpers.
+- `lib/models.ts` — Centralized AI model configuration. One entry per tool role (`extraction`, `briefing`, `verification`).
 - `lib/schemas/` — All Zod schemas. Shared between agent and app — import from here, never redefine inline.
 - `components/` — Shared React components.
 - `components/ui/` — shadcn-generated. CLI only. Do not edit.

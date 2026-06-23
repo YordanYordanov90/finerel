@@ -67,7 +67,7 @@ Wire `/cron/morning-briefing` to execute in sequence:
 2. Query all users with active watchlists
 3. For each user:
    a. fetch_watchlist_news (Finnhub, per-user tickers)
-   b. extract_relationships (Vercel AI SDK + GPT-4.1-mini)
+   b. extract_relationships (Vercel AI SDK + models.extraction)
    c. store_relationships (Drizzle → Neon)
    d. send_briefing_email (Resend → user's email)
 4. Return 200
@@ -75,11 +75,11 @@ Wire `/cron/morning-briefing` to execute in sequence:
 
 Architecture.md data flow:
 ```
-QStash (07:00 EEST cron)
+QStash (09:00 EEST cron)
   → POST /api/cron/morning-briefing (Vercel)
       → Verify QStash signature
       → fetch_watchlist_news (Finnhub, per user)
-      → extract_relationships (Vercel AI SDK + GPT-4.1-mini + Zod)
+      → extract_relationships (Vercel AI SDK + models.extraction + Zod)
       → store_relationships (Drizzle → Neon Postgres)
       → generate_briefing_summary
       → send email via Resend

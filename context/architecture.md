@@ -10,7 +10,7 @@
 | Graph UI      | React Flow                           | Interactive relationship graph visualization               |
 | Auth          | Clerk                                | Multi-tenant authentication and user identity              |
 | AI SDK        | Vercel AI SDK (`generateObject`)     | Structured relationship extraction                         |
-| AI Model      | GPT-4.1-mini (OpenAI)                | `extract_relationships` tool — fast, cheap, Zod-native     |
+| AI Models     | OpenAI (GPT-4.1-mini default)        | Centralized in `lib/models.ts` — per-tool model routing    |
 | Agent Runtime | Vercel Functions (Fluid Compute)     | Cron handling, news fetch, extraction — no separate server |
 | Database      | Neon Postgres + Drizzle ORM          | All structured data — relationships, briefings, watchlists |
 | Scheduling    | Upstash QStash                       | Daily cron trigger → Vercel API route (with retries)       |
@@ -28,6 +28,7 @@
 - `app/api/` — Next.js API routes. Owns read operations, dashboard data queries, Clerk webhook handling, and cron endpoints.
 - `lib/db/` — Drizzle ORM schema, migrations, and query helpers. Shared across all routes.
 - `lib/schemas/` — Zod schemas for all tool inputs/outputs and API boundaries. Single source of truth for data shapes.
+- `lib/models.ts` — Centralized AI model configuration. All LLM model selections live here — tools import named model references, never instantiate providers directly. Enables per-tool model routing (e.g. cheap model for extraction, smarter model for verification).
 - `components/` — Shared React components. `components/ui/` is shadcn-generated — do not hand-edit.
 
 ## Storage Model
@@ -51,7 +52,7 @@ QStash (09:00 EEST cron)
   → POST /api/cron/morning-briefing (Vercel)
       → Verify QStash signature
       → fetch_watchlist_news (Finnhub, per user)
-      → extract_relationships (Vercel AI SDK + GPT-4.1-mini + Zod)
+      → extract_relationships (Vercel AI SDK + models.extraction + Zod)
       → store_relationships (Drizzle → Neon Postgres)
       → generate_briefing_summary
       → send email via Resend
