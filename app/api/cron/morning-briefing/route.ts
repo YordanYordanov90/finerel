@@ -5,19 +5,16 @@ import { eq } from "drizzle-orm";
 
 export const maxDuration = 300;
 
-// Returns the current HH:MM in EEST (UTC+3).
-function currentEestTime(): string {
+// Returns the current hour as HH:00 in EEST (UTC+3).
+function currentEestHour(): string {
   const now = new Date();
-  const eestOffset = 3 * 60;
-  const eestMs = now.getTime() + eestOffset * 60 * 1000;
-  const eest = new Date(eestMs);
-  const hh = String(eest.getUTCHours()).padStart(2, "0");
-  const mm = String(eest.getUTCMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
+  const eestMs = now.getTime() + 3 * 60 * 60 * 1000;
+  const hh = String(new Date(eestMs).getUTCHours()).padStart(2, "0");
+  return `${hh}:00`;
 }
 
 async function getUsersScheduledNow(): Promise<Map<string, string[]>> {
-  const currentTime = currentEestTime();
+  const currentTime = currentEestHour();
 
   const rows = await db
     .select({ userId: watchlists.userId, ticker: watchlists.ticker })
@@ -43,12 +40,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const currentTime = currentEestTime();
+  const currentTime = currentEestHour();
   const userTickers = await getUsersScheduledNow();
   let processed = 0;
 
   console.log("[morning-briefing] running", {
-    currentEestTime: currentTime,
+    currentEestHour: currentTime,
     usersScheduled: userTickers.size,
   });
 
@@ -75,7 +72,7 @@ export async function POST(request: Request) {
 
   return Response.json({
     ok: true,
-    currentEestTime: currentTime,
+    currentEestHour: currentTime,
     usersProcessed: processed,
     usersTotal: userTickers.size,
   });
