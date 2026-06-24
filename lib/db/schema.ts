@@ -13,7 +13,7 @@ import {
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
-  briefingTime: text("briefingTime").default("07:00").notNull(),
+  briefingTime: text("briefingTime").default("09:00").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

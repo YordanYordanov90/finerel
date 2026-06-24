@@ -52,7 +52,7 @@ looks genuinely useful — a connected graph, diverse relationship types, and
   - ~40% medium (0.5–0.79)
   - ~20% low (0.0–0.49)
 - This distribution ensures all three confidence tiers show their correct colors
-  on the dashboard (ui-context.md: neon-400 for high, amber-400 for medium,
+  on the dashboard (ui-context.md: cyan-400 for high, amber-400 for medium,
   rose-400 for low).
 - Impact levels: mix of high, medium, low across relationships.
 - `contextSnippet` on each relationship: realistic 1–2 sentence quotes
@@ -68,7 +68,7 @@ looks genuinely useful — a connected graph, diverse relationship types, and
   not a disconnected set of isolated pairs.
 - Include at least 2–3 companies that are not in the watchlist (discovered
   through relationships with watchlist companies) — these test the visual
-  distinction between watchlist nodes (`border-neon-500/50`) and
+  distinction between watchlist nodes (`border-cyan-500/50`) and
   non-watchlist nodes.
 
 ### Briefings
@@ -108,7 +108,7 @@ looks genuinely useful — a connected graph, diverse relationship types, and
 1. Script runs cleanly with `npx tsx scripts/seed-demo.ts` and exits with code 0.
 2. Running the script twice does not create duplicate data.
 3. Demo dashboard overview page shows relationship cards with all three confidence
-   color tiers (neon, amber, rose).
+   color tiers (cyan, amber, rose).
 4. Demo dashboard graph page shows a connected multi-node graph with at least
    8 company nodes and 15 edges.
 5. Watchlist nodes are visually distinct from non-watchlist nodes in the graph.

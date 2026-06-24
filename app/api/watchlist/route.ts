@@ -1,31 +1,41 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { and, desc, eq } from "drizzle-orm";
 
-import { isDemoUser } from "@/lib/auth";
-import { db, watchlists } from "@/lib/db";
+import { getAuthOrDemoUserId, isDemoUser } from "@/lib/auth";
+import { db, users, watchlists } from "@/lib/db";
 import { addWatchlistTickerSchema } from "@/lib/schemas/watchlist";
 
-export async function GET() {
-  const { userId } = await auth();
+export async function GET(request: Request) {
+  const userId = await getAuthOrDemoUserId(request);
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rows = await db
-    .select({ ticker: watchlists.ticker, addedAt: watchlists.addedAt })
-    .from(watchlists)
-    .where(eq(watchlists.userId, userId))
-    .orderBy(desc(watchlists.addedAt));
+  try {
+    const rows = await db
+      .select({ ticker: watchlists.ticker, addedAt: watchlists.addedAt })
+      .from(watchlists)
+      .where(eq(watchlists.userId, userId))
+      .orderBy(desc(watchlists.addedAt));
 
-  return Response.json({
-    data: {
-      tickers: rows.map((row) => ({
-        ticker: row.ticker,
-        addedAt: row.addedAt.toISOString(),
-      })),
-    },
-  });
+    return Response.json({
+      data: {
+        tickers: rows.map((row) => ({
+          ticker: row.ticker,
+          addedAt: row.addedAt.toISOString(),
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("[api/watchlist] database error", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {
@@ -59,34 +69,55 @@ export async function POST(request: Request) {
 
   const { ticker } = parsed.data;
 
-  const existing = await db
-    .select({ id: watchlists.id })
-    .from(watchlists)
-    .where(and(eq(watchlists.userId, userId), eq(watchlists.ticker, ticker)))
-    .limit(1);
+  const clerkUser = await currentUser();
+  const email =
+    clerkUser?.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId,
+    )?.emailAddress ?? "";
 
-  if (existing.length > 0) {
+  try {
+    await db
+      .insert(users)
+      .values({ id: userId, email })
+      .onConflictDoNothing();
+
+    const existing = await db
+      .select({ id: watchlists.id })
+      .from(watchlists)
+      .where(and(eq(watchlists.userId, userId), eq(watchlists.ticker, ticker)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return Response.json(
+        { error: "Ticker already in watchlist" },
+        { status: 400 },
+      );
+    }
+
+    const [inserted] = await db
+      .insert(watchlists)
+      .values({ userId, ticker })
+      .returning({
+        ticker: watchlists.ticker,
+        addedAt: watchlists.addedAt,
+      });
+
     return Response.json(
-      { error: "Ticker already in watchlist" },
-      { status: 400 },
+      {
+        data: {
+          ticker: inserted.ticker,
+          addedAt: inserted.addedAt.toISOString(),
+        },
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("[api/watchlist] database error", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
-
-  const [inserted] = await db
-    .insert(watchlists)
-    .values({ userId, ticker })
-    .returning({
-      ticker: watchlists.ticker,
-      addedAt: watchlists.addedAt,
-    });
-
-  return Response.json(
-    {
-      data: {
-        ticker: inserted.ticker,
-        addedAt: inserted.addedAt.toISOString(),
-      },
-    },
-    { status: 201 },
-  );
 }

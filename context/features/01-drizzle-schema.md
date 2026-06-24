@@ -47,7 +47,7 @@ by userId — no query ever returns data across users").
 |---|---|---|
 | `id` | `text` PK | Clerk `userId` — the foreign key for all other tables |
 | `email` | `text` not null | From Clerk webhook `user.created` |
-| `briefingTime` | `text` default `'07:00'` | EEST cron preference (read-only in MVP) |
+| `briefingTime` | `text` default `'09:00'` | EEST briefing preference (read-only in MVP) |
 | `createdAt` | `timestamp` default `now()` | |
 | `updatedAt` | `timestamp` default `now()` | |
 

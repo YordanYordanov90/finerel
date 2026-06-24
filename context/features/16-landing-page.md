@@ -41,15 +41,15 @@ employers reviewing the portfolio.
 - Two CTAs:
   - "See it live" → links to demo dashboard (`/demo` or app shell with demo user)
   - "Get started" → links to Clerk signup
-- Neon accent (`#c8ff00`) on primary CTA — `fr-cta-btn` utility.
+- Cyan accent (`#06B6D4`) on primary CTA — `fr-cta-btn` utility.
 - ui-context.md: "Landing hero: Syne, text-3xl → text-6xl, responsive hero headline."
 - Syne font for hero headline (`font-heading`).
 - Inter for body text (`font-sans`).
 
 ### Background (from ui-context.md)
 
-- `fr-page` background: `bg-[#0a0a0a]` + neon radial glow.
-- ui-context.md: "Root page background (#0a0a0a) + neon radial glow (.fr-page)."
+- `fr-page` background: `bg-[#0a0a0a]` + cyan radial glow.
+- ui-context.md: "Root page background (#0a0a0a) + cyan radial glow (.fr-page)."
 
 ### How It Works Section
 
@@ -85,7 +85,7 @@ Three steps (from project-overview.md core user flow):
 3. "Get started" CTA links to Clerk signup.
 4. Hero headline uses Syne font (`font-heading`).
 5. Hero communicates the product value proposition in under 10 seconds of reading.
-6. `fr-page` background with neon radial glow is applied.
+6. `fr-page` background with cyan radial glow is applied.
 7. How-it-works section shows three clear steps.
 8. Page uses `max-w-7xl` max width and `overflow-x-clip`.
 9. No sidebar, no app shell — standalone landing layout.

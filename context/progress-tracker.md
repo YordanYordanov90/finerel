@@ -15,26 +15,28 @@ Update this file after every meaningful implementation change.
 | 07 | [API Routes: Read-Only Data](features/07-api-routes-read.md) | ✅ Done |
 | 08 | [API Routes: Settings](features/08-api-routes-settings.md) | ✅ Done |
 | 09 | [Clerk Authentication & Demo Mode](features/09-auth.md) | ✅ Done |
-| 10 | [App Shell (Sidebar, Navbar, Layout)](features/10-app-shell.md) | ⬜ Pending |
-| 11 | [Overview Page](features/11-overview-page.md) | ⬜ Pending |
-| 12 | [Relationship Graph Page](features/12-graph-page.md) | ⬜ Pending |
-| 13 | [Briefing History Page](features/13-briefing-history-page.md) | ⬜ Pending |
-| 14 | [Watchlist Page](features/14-watchlist-page.md) | ⬜ Pending |
-| 15 | [Settings Page](features/15-settings-page.md) | ⬜ Pending |
-| 16 | [Landing Page](features/16-landing-page.md) | ⬜ Pending |
-| 17 | [Demo Data Seeding](features/17-demo-seeding.md) | ⬜ Pending |
+| 10 | [App Shell (Sidebar, Navbar, Layout)](features/10-app-shell.md) | ✅ Done |
+| 11 | [Overview Page](features/11-overview-page.md) | ✅ Done |
+| 12 | [Relationship Graph Page](features/12-graph-page.md) | ✅ Done |
+| 13 | [Briefing History Page](features/13-briefing-history-page.md) | ✅ Done |
+| 14 | [Watchlist Page](features/14-watchlist-page.md) | ✅ Done |
+| 15 | [Settings Page](features/15-settings-page.md) | ✅ Done |
+| 16 | [Landing Page](features/16-landing-page.md) | ✅ Done |
+| 17 | [Demo Data Seeding](features/17-demo-seeding.md) | ✅ Done |
+| 18 | [Loading States](features/18-loading-state.md) | ✅ Done |
+| 19 | [Error Handling](features/19-error-handling.md) | ✅ Done |
 
-**Progress: 9 / 17 features complete**
+**Progress: 19 / 19 features complete**
 
 ---
 
 ## Current Phase
 
-Phase 1 — Foundation (In Progress)
+Phase 1 — Foundation (Complete)
 
 ## Current Goal
 
-Build dashboard app shell and pages (features 10–15).
+Phase 2 planning — interactive agent, production hardening.
 
 ## Completed
 
@@ -97,6 +99,59 @@ Build dashboard app shell and pages (features 10–15).
   - `POST /api/webhooks/clerk` — Svix signature verification via `verifyWebhook`, Zod-validated `user.created` payload, inserts `users` row (empty watchlist by default), idempotent via `onConflictDoNothing`.
   - `lib/schemas/clerk-webhook.ts` — `clerkUserCreatedEventSchema`, `getPrimaryEmail()` helper.
   - Env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`, `DEMO_USER_ID`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`.
+- **App shell** (June 23, 2026):
+  - `app/(app)/layout.tsx` — authenticated dashboard shell via `AppShell`.
+  - `components/AppShell.tsx` — mobile sidebar toggle + overlay.
+  - `components/AppSidebar.tsx` — 240px sidebar, five nav links (Lucide `h-5 w-5`), active `text-cyan-400`, FinRel wordmark (Syne, `Fin` zinc-100 + `Rel` cyan-400).
+  - `components/AppNavbar.tsx` — sticky `fr-nav`, breadcrumb page title, Clerk `UserButton`.
+  - `app/globals.css` — all seven `fr-*` utilities per ui-context.md.
+  - `app/layout.tsx` — Inter (`font-sans`), Syne (`font-heading`), Geist Mono (`font-mono`).
+  - Placeholder pages: `/`, `/graph`, `/history`, `/watchlist`, `/settings` under `(app)` route group.
+  - Overview relocated to `/overview`; landing page at `/` via `(landing)` route group.
+- **Overview page** (June 23, 2026):
+  - `app/(app)/page.tsx` — server component; Drizzle queries scoped by `userId` for today's relationships (confidence DESC) and today's briefing.
+  - `components/relationships/RelationshipCard.tsx` — company arrow, ticker pills, `fr-badge` metadata, confidence semantic colors, context snippet, external link.
+  - `components/briefing/BriefingSummaryCard.tsx` — summary (max 500 chars), `itemsProcessed` / `relationshipsFound` badges.
+  - `components/EmptyState.tsx` — reusable empty state with Lucide `h-8 w-8` icon.
+  - `lib/utils/confidence.ts` — percentage + label helper (High ≥0.8 cyan, Medium ≥0.5 amber, Low rose).
+  - 2-column layout (`lg:grid-cols-3`, feed spans 2); full-page empty state when no data today.
+- **Relationship graph page** (June 23, 2026):
+  - `lib/data/graph.ts` — shared graph data fetch (used by page + `GET /api/graph`).
+  - `lib/utils/graph.ts` — dagre layout, edge colors, stroke width scaling, formatters.
+  - `components/graph/` — `RelationshipGraph`, `CompanyNode`, `RelationshipEdge`, `NodeDetailDrawer`, `GraphControls`.
+  - `app/(app)/graph/page.tsx` — server component; empty state when no edges; full-width React Flow canvas.
+  - Dependencies: `@xyflow/react`, `@dagrejs/dagre`. shadcn Sheet for node detail drawer.
+  - Watchlist nodes: larger size + `border-cyan-500/50`. Edge labels on hover only. Confidence-scaled stroke width.
+- **Briefing history page** (June 23, 2026):
+  - `lib/schemas/history-filters.ts` — Zod-validated filter state (relationTypes, minConfidence, dateRange, ticker).
+  - `lib/utils/history-api.ts` — client fetch helpers for briefings and expanded relationships.
+  - `components/history/` — `FilterBar`, `BriefingTable`, `BriefingRow` (expandable rows + RelationshipCard).
+  - `app/(app)/history/page.tsx` — auth-gated server wrapper.
+  - `GET /api/relationships` extended with `briefingId` param for per-briefing expand.
+  - Load-more pagination, date range filters briefings client-side; other filters apply on relationship expand.
+- **Watchlist page** (June 23, 2026):
+  - `lib/utils/watchlist-api.ts` — client fetch helpers for watchlist CRUD and relationship activity aggregation.
+  - `components/watchlist/AddTickerInput.tsx` — uppercase input, Zod validation, toast errors, `POST /api/watchlist`.
+  - `components/watchlist/TickerList.tsx` — ticker rows with relationship count + last activity, inline remove confirm, demo read-only banner.
+  - `app/(app)/watchlist/page.tsx` — auth-gated server wrapper; `isDemoUser()` disables mutations.
+  - shadcn `sonner` + `input` added; `Toaster` in root layout.
+  - `addWatchlistTickerSchema` extended with letters-only regex.
+- **Settings page** (June 23, 2026):
+  - `components/settings/BriefingTimeSection.tsx` — read-only briefing time with beta note.
+  - `app/(app)/settings/page.tsx` — email from Clerk `currentUser()`, `briefingTime` from DB, demo read-only banner.
+- **Landing page** (June 23, 2026):
+  - `app/(landing)/` — public marketing page at `/`; no app shell.
+  - `components/landing/` — `LandingNavbar`, `Hero`, `RelationshipPreview`, `HowItWorks`, `Features`, `LandingCta`, `LandingFooter`.
+  - `app/demo/page.tsx` — demo entry redirects to `/overview` (auth) or sign-in.
+  - Dashboard overview moved from `/` to `/overview`; sidebar/navbar updated.
+- **Demo data seeding** (June 23, 2026):
+  - `scripts/seed-demo.ts` — idempotent delete-and-reseed via `npm run db:seed-demo`.
+  - `scripts/seed-data/` — handcrafted news, briefings, relationships generators.
+  - Seeds `DEMO_USER_ID` (or fallback `user_demo_finrel`): 5 tickers, 65 news items, 24 briefings, 60 relationships.
+  - Confidence distribution 24/24/12 (high/medium/low); all five relation types represented.
+- **Loading states** (June 23, 2026):
+  - `components/ui/skeleton.tsx` — shadcn Skeleton with `bg-zinc-800/50` for dark theme.
+  - `app/(app)/{overview,graph,history,watchlist,settings}/loading.tsx` — route-level skeletons mirroring each page layout.
 
 ## In Progress
 
@@ -104,10 +159,8 @@ Build dashboard app shell and pages (features 10–15).
 
 ## Next Up
 
-1. Build app shell (sidebar, navbar, layout) — feature 10.
-2. Build dashboard pages: overview, relationship graph (React Flow), briefing history, watchlist management, settings — features 11–15.
-3. Seed demo data and configure `DEMO_USER_ID` for read-only demo account — feature 17.
-4. Build public landing page — feature 16.
+1. Set `DEMO_USER_ID` in `.env.local` to the Clerk demo account `userId` (fallback `user_demo_finrel` used until configured).
+2. Verify Resend domain and run first live cron briefing.
 
 ## Open Questions
 
@@ -138,6 +191,18 @@ Build dashboard app shell and pages (features 10–15).
 
 ## Session Notes
 
+- Error handling — complete (June 23, 2026). Low priority: `MAX_PAGES` guard on `fetchAllRelationships`, Retry buttons on `TickerList`/`BriefingTable`/`BriefingRow`, demo-not-configured warning in `getAuthOrDemoUserId`.
+- Error handling — medium priority (June 23, 2026). `parseResponse()` hardened in `watchlist-api.ts` + `history-api.ts`; `app/not-found.tsx` themed 404; Clerk webhook DB insert wrapped in try/catch.
+- Error handling — high priority (June 23, 2026). `app/(app)/error.tsx` + `app/global-error.tsx` boundaries; try/catch on all six API routes (`briefings`, `relationships`, `graph`, `watchlist`, `watchlist/[ticker]`, `settings`) with structured 500 responses and route-prefixed logging.
+- Loading states implemented (June 23, 2026). Skeleton component + five `loading.tsx` files for all dashboard routes.
+- Demo data seeding implemented (June 23, 2026). `npm run db:seed-demo` seeds 60 relationships, 24 briefings, 5-ticker watchlist. Phase 1 complete.
+- Landing page implemented (June 23, 2026). Public `/` marketing page, demo CTA, overview at `/overview`.
+- Settings page implemented (June 23, 2026). Clerk email + DB briefing time, read-only MVP, demo banner.
+- Watchlist page implemented (June 23, 2026). Add/remove tickers with toast feedback, activity summaries from relationships API, demo read-only mode.
+- Briefing history page implemented (June 23, 2026). Filter bar, expandable briefing rows, RelationshipCard on expand, load-more pagination, `briefingId` filter on relationships API.
+- Relationship graph page implemented (June 23, 2026). React Flow canvas with dagre layout, type-colored edges, hover labels, watchlist node styling, shadcn Sheet drawer on node click.
+- Overview page implemented (June 23, 2026). Relationship feed + briefing summary card, confidence colors, empty state, Drizzle server-side fetch.
+- App shell implemented (June 23, 2026). Sidebar, navbar, `fr-*` utilities, three fonts, responsive mobile nav. Placeholder pages for all five dashboard routes.
 - Clerk auth implemented (June 23, 2026). Webhook onboarding, sign-in/sign-up pages, `proxy.ts` public route list, `isDemoUser()` helper. Set `CLERK_WEBHOOK_SIGNING_SECRET` and `DEMO_USER_ID` in Vercel before going live.
 - Settings API route implemented (June 23, 2026). `GET /api/settings` returns user `briefingTime`; read-only, demo-friendly.
 - Read-only API routes implemented (June 23, 2026). `GET /api/relationships` (filtered + paginated), `GET /api/briefings` (paginated), `GET /api/graph` (React Flow nodes/edges with `isWatchlist` flag). Response shapes documented in Completed section for frontend reference.

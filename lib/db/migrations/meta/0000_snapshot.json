@@ -413,7 +413,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'07:00'"
+          "default": "'09:00'"
         },
         "createdAt": {
           "name": "createdAt",

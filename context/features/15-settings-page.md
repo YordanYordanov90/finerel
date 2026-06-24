@@ -34,12 +34,11 @@ User settings page — displays email address and briefing time. Read-only in MV
 
 ### Briefing Time Section
 
-- Displays the current briefing time: `07:00 EEST`.
+- Displays the current briefing time: `09:00 EEST`.
 - Read-only in MVP — not user-configurable (project-overview.md: "briefing
   time preference").
 - Note: "Briefing time is fixed at 09:00 EEST during the beta."
-  (Architecture.md data flow: "QStash (07:00 EEST cron)" — the cron triggers
-  at 07:00, briefing arrives by ~09:00 after processing.)
+  (Architecture.md data flow: "QStash (09:00 EEST cron)".)
 
 ### Demo Mode
 

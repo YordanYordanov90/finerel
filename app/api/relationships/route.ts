@@ -1,11 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
 
+import { getAuthOrDemoUserId } from "@/lib/auth";
 import { db, relationships } from "@/lib/db";
 import { relationshipsQuerySchema } from "@/lib/schemas/api-params";
 
 export async function GET(request: Request) {
-  const { userId } = await auth();
+  const userId = await getAuthOrDemoUserId(request);
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +20,8 @@ export async function GET(request: Request) {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  const { ticker, relationType, minConfidence, startDate, endDate, limit, offset } = parsed.data;
+  const { ticker, relationType, minConfidence, startDate, endDate, briefingId, limit, offset } =
+    parsed.data;
 
   const conditions = [eq(relationships.userId, userId)];
 
@@ -46,41 +47,55 @@ export async function GET(request: Request) {
   }
 
   if (endDate) {
-    conditions.push(lte(relationships.extractedAt, new Date(endDate)));
+    conditions.push(lte(relationships.extractedAt, new Date(`${endDate}T23:59:59.999Z`)));
+  }
+
+  if (briefingId !== undefined) {
+    conditions.push(eq(relationships.briefingId, briefingId));
   }
 
   const where = and(...conditions);
 
-  const [rows, [{ total }]] = await Promise.all([
-    db
-      .select()
-      .from(relationships)
-      .where(where)
-      .orderBy(desc(relationships.extractedAt))
-      .limit(limit)
-      .offset(offset),
-    db
-      .select({ total: count() })
-      .from(relationships)
-      .where(where),
-  ]);
+  try {
+    const [rows, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(relationships)
+        .where(where)
+        .orderBy(desc(relationships.extractedAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ total: count() })
+        .from(relationships)
+        .where(where),
+    ]);
 
-  return Response.json({
-    data: {
-      relationships: rows.map((r) => ({
-        id: r.id,
-        sourceCompany: r.sourceCompany,
-        sourceTicker: r.sourceTicker,
-        targetCompany: r.targetCompany,
-        targetTicker: r.targetTicker,
-        relationType: r.relationType,
-        confidence: r.confidence,
-        impactLevel: r.impactLevel,
-        contextSnippet: r.contextSnippet,
-        sourceUrl: r.sourceUrl,
-        extractedAt: r.extractedAt.toISOString(),
-      })),
-      total,
-    },
-  });
+    return Response.json({
+      data: {
+        relationships: rows.map((r) => ({
+          id: r.id,
+          sourceCompany: r.sourceCompany,
+          sourceTicker: r.sourceTicker,
+          targetCompany: r.targetCompany,
+          targetTicker: r.targetTicker,
+          relationType: r.relationType,
+          confidence: r.confidence,
+          impactLevel: r.impactLevel,
+          contextSnippet: r.contextSnippet,
+          sourceUrl: r.sourceUrl,
+          extractedAt: r.extractedAt.toISOString(),
+        })),
+        total,
+      },
+    });
+  } catch (error) {
+    console.error("[api/relationships] database error", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
