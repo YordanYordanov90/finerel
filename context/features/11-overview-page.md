@@ -44,11 +44,11 @@ Each card displays:
 |---|---|---|
 | `sourceCompany` → `targetCompany` | Arrow notation, company names in `text-zinc-100` | |
 | `relationType` | Muted metadata badge: `fr-badge` pattern from ui-context.md | |
-| `confidence` | Percentage + label with semantic color from ui-context.md confidence table: ≥0.8 `text-neon-400` "High", 0.5–0.79 `text-amber-400` "Medium", <0.5 `text-rose-400` "Low" | ui-context.md §Confidence Score Display |
+| `confidence` | Percentage + label with semantic color from ui-context.md confidence table: ≥0.8 `text-cyan-400` "High", 0.5–0.79 `text-amber-400` "Medium", <0.5 `text-rose-400` "Low" | ui-context.md §Confidence Score Display |
 | `impactLevel` | Muted metadata badge (`fr-badge`) | ui-context.md §Muted Metadata Badge |
 | `contextSnippet` | Body text, `text-zinc-400`, max 300 chars | core-intelligence-spec.md |
 | `sourceUrl` | External link icon, opens source article | |
-| Ticker symbols | `font-mono text-neon-300/95 bg-black/55 border border-zinc-800 rounded-md px-1.5 py-0.5 text-xs` | ui-context.md §Ticker symbols |
+| Ticker symbols | `font-mono text-cyan-300/95 bg-black/55 border border-zinc-800 rounded-md px-1.5 py-0.5 text-xs` | ui-context.md §Ticker symbols |
 
 - ui-context.md: "Always show both the percentage and the label. Never show raw
   decimal values to users."
@@ -73,8 +73,8 @@ Each card displays:
 
 1. Page renders inside the app shell on the `/` route.
 2. Relationship cards display all required fields with correct formatting.
-3. Confidence colors match ui-context.md thresholds: neon-400 for ≥0.8, amber-400 for 0.5–0.79, rose-400 for <0.5.
-4. Ticker symbols use the `font-mono` neon pill style from ui-context.md.
+3. Confidence colors match ui-context.md thresholds: cyan-400 for ≥0.8, amber-400 for 0.5–0.79, rose-400 for <0.5.
+4. Ticker symbols use the `font-mono` cyan pill style from ui-context.md.
 5. Briefing summary card shows today's summary text.
 6. Empty state renders cleanly when no data exists.
 7. 2-column layout on desktop, single column on mobile.

@@ -32,7 +32,7 @@ per ticker.
 ### Ticker List
 
 - Each ticker row shows:
-  - Ticker symbol in `font-mono text-neon-300/95` pill style (ui-context.md).
+  - Ticker symbol in `font-mono text-cyan-300/95` pill style (ui-context.md).
   - Relationship count (how many relationships involve this ticker).
   - Last activity date.
   - Remove button (trash icon, `h-4 w-4` per ui-context.md).
@@ -68,7 +68,7 @@ per ticker.
 4. Adding a duplicate or invalid ticker shows an error toast.
 5. Remove ticker works with confirmation.
 6. Demo user sees read-only state — add/remove controls disabled with explanation.
-7. Ticker symbols use `font-mono` neon pill styling.
+7. Ticker symbols use `font-mono` cyan pill styling.
 
 ---
 

@@ -5,6 +5,7 @@ export const addWatchlistTickerSchema = z.object({
     .string()
     .min(1)
     .max(5)
+    .regex(/^[A-Za-z.]+$/, "Ticker must contain only letters and dots")
     .transform((value) => value.toUpperCase()),
 });
 

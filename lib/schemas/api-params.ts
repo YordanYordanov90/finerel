@@ -13,6 +13,7 @@ export const relationshipsQuerySchema = z.object({
   minConfidence: z.coerce.number().min(0).max(1).optional(),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
+  briefingId: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

@@ -43,10 +43,10 @@ the `globals.css` utility classes. This layout wraps all dashboard pages.
   - Watchlist → `/watchlist`
   - Settings → `/settings`
 - Active route highlighted using `usePathname()` — `'use client'` directive needed.
-- Active state: `text-neon-400` accent (ui-context.md accent text).
+- Active state: `text-cyan-400` accent (ui-context.md accent text).
 - Inactive state: `fr-nav-muted` token (ui-context.md Shell Utilities).
-- FinRel logo wordmark at top: `Fin` in zinc-100 + `Rel` in neon-400/500
-  (ui-context.md: "Logo wordmark: Fin + accent Rel (neon-400/500)").
+- FinRel logo wordmark at top: `Fin` in zinc-100 + `Rel` in cyan-400/500
+  (ui-context.md: "Logo wordmark: Fin + accent Rel (cyan-400/500)").
   Syne font for the wordmark (ui-context.md: "Syne — Page titles, section headings,
   logo wordmark").
 - Responsive: sidebar collapses on mobile (hidden below `md` breakpoint,
@@ -66,13 +66,13 @@ Define exactly these utility classes:
 
 | Utility | Purpose (from ui-context.md) |
 |---|---|
-| `.fr-page` | Root page background (`#0a0a0a`) + neon radial glow |
+| `.fr-page` | Root page background (`#0a0a0a`) + cyan radial glow |
 | `.fr-nav` | Sticky navbar background + backdrop-blur |
 | `.fr-nav-muted` | Muted nav link / inactive pill |
 | `.fr-card` | Standard card surface + zinc-800 border |
 | `.fr-badge` | Muted metadata badge (ticker, relation type, impact) |
 | `.fr-heading` | Heading typography (Syne) |
-| `.fr-cta-btn` | Primary neon-accent CTA button |
+| `.fr-cta-btn` | Primary cyan-accent CTA button |
 
 ### Typography (from ui-context.md)
 
@@ -93,12 +93,12 @@ Define exactly these utility classes:
 
 1. Shell renders on all `(app)` dashboard routes.
 2. Sidebar shows all five navigation links with correct icons.
-3. Active route is highlighted with `text-neon-400`.
+3. Active route is highlighted with `text-cyan-400`.
 4. Clerk `<UserButton />` renders in the navbar and shows the authenticated user.
 5. All `fr-*` utility classes are defined in `globals.css` and match ui-context.md.
 6. Three font families (Inter, Syne, Geist Mono) are loaded and applied correctly.
 7. Layout is responsive — sidebar hidden on mobile with a toggle button.
-8. FinRel wordmark renders with Syne font, `Fin` in zinc-100, `Rel` in neon accent.
+8. FinRel wordmark renders with Syne font, `Fin` in zinc-100, `Rel` in cyan accent.
 9. Dark theme only — no light mode styles or toggle.
 
 ---

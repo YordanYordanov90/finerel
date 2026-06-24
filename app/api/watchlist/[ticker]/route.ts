@@ -25,27 +25,37 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { ticker } = await context.params;
   const normalizedTicker = ticker.toUpperCase();
 
-  const deleted = await db
-    .delete(watchlists)
-    .where(
-      and(
-        eq(watchlists.userId, userId),
-        eq(watchlists.ticker, normalizedTicker),
-      ),
-    )
-    .returning({ ticker: watchlists.ticker });
+  try {
+    const deleted = await db
+      .delete(watchlists)
+      .where(
+        and(
+          eq(watchlists.userId, userId),
+          eq(watchlists.ticker, normalizedTicker),
+        ),
+      )
+      .returning({ ticker: watchlists.ticker });
 
-  if (deleted.length === 0) {
+    if (deleted.length === 0) {
+      return Response.json(
+        { error: "Ticker not found in watchlist" },
+        { status: 404 },
+      );
+    }
+
+    return Response.json({
+      data: {
+        ticker: deleted[0].ticker,
+        removed: true,
+      },
+    });
+  } catch (error) {
+    console.error("[api/watchlist/[ticker]] database error", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
     return Response.json(
-      { error: "Ticker not found in watchlist" },
-      { status: 404 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
-
-  return Response.json({
-    data: {
-      ticker: deleted[0].ticker,
-      removed: true,
-    },
-  });
 }

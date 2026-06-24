@@ -36,10 +36,10 @@ Companies are nodes, relationships are typed colored edges.
 - Shape: rounded rectangle (`rounded-xl`).
 - Surface: `bg-[#111111]`, `border-zinc-800`.
 - Company name: `font-sans text-zinc-100`.
-- Ticker symbol below name: `font-mono text-neon-300/95`.
-- **Watchlist nodes**: larger size + `border-neon-500/50` to distinguish from
+- Ticker symbol below name: `font-mono text-cyan-300/95`.
+- **Watchlist nodes**: larger size + `border-cyan-500/50` to distinguish from
   discovered/peripheral companies (ui-context.md: "Watchlist nodes: Larger size +
-  border-neon-500/50 border to distinguish from discovered/peripheral companies").
+  border-cyan-500/50 border to distinguish from discovered/peripheral companies").
 
 ### Edge Rendering (from ui-context.md §Relationship Edge Colors)
 
@@ -47,13 +47,13 @@ Color by `relationType`:
 
 | Relationship type | Color | Hex |
 |---|---|---|
-| `partnership` | neon-500 | `#c8ff00` |
+| `partnership` | cyan-500 | `#06B6D4` |
 | `supply_chain` | violet-400 | `#a78bfa` |
 | `investment` | emerald-400 | `#34d399` |
 | `executive_mention` | amber-400 | `#fbbf24` |
 | `product_collaboration` | pink-400 | `#f472b6` |
 
-- ui-context.md: "Partnership edges use the neon accent — it's the most significant
+- ui-context.md: "Partnership edges use the cyan accent — it's the most significant
   relationship type and the most likely to appear on a user's watchlist."
 - Edge thickness scales with `confidence` — thicker = higher confidence.
 - Label shown on hover only (ui-context.md: "Label shown on hover only to avoid clutter").
@@ -91,7 +91,7 @@ Color by `relationType`:
 ## Acceptance Criteria
 
 1. Graph renders with data from `/api/graph`.
-2. Watchlist nodes are visually distinct (`border-neon-500/50`, larger size).
+2. Watchlist nodes are visually distinct (`border-cyan-500/50`, larger size).
 3. Edge colors match the relation type table from ui-context.md exactly.
 4. Edge thickness scales with confidence value.
 5. Edge labels appear on hover only.

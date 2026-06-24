@@ -50,7 +50,7 @@ CREATE TABLE "relationships" (
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"email" text NOT NULL,
-	"briefingTime" text DEFAULT '07:00' NOT NULL,
+	"briefingTime" text DEFAULT '09:00' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );

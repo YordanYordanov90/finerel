@@ -10,8 +10,13 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
 ]);
 
+function isDemoApiRequest(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.searchParams.get("demo") === "true" && url.pathname.startsWith("/api/");
+}
+
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  if (!isPublicRoute(request) && !isDemoApiRequest(request)) {
     await auth.protect();
   }
 });

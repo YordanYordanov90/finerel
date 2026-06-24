@@ -8,6 +8,13 @@
       "when": 1781463471875,
       "tag": "0000_odd_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781463472000,
+      "tag": "0001_briefing_time_0900",
+      "breakpoints": true
     }
   ]
 }

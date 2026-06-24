@@ -31,10 +31,21 @@ export async function POST(request: NextRequest) {
   const userData = parsed.data.data;
   const email = getPrimaryEmail(userData);
 
-  await db
-    .insert(users)
-    .values({ id: userData.id, email })
-    .onConflictDoNothing();
+  try {
+    await db
+      .insert(users)
+      .values({ id: userData.id, email })
+      .onConflictDoNothing();
+  } catch (error) {
+    console.error("[api/webhooks/clerk] database error", {
+      error: error instanceof Error ? error.message : "unknown",
+      userId: userData.id,
+    });
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 
   return new Response("Success", { status: 200 });
 }

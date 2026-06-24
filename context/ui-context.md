@@ -2,41 +2,41 @@
 
 ## Brand
 
-Product name: **FinRel**. Logo wordmark: `Fin` + accent `Rel` (neon-400/500).
-Design language shared with PineForge: zinc surfaces + neon `#c8ff00` accent.
+Product name: **FinRel**. Logo wordmark: `Fin` + accent `Rel` (cyan-400/500).
+Design language shared with PineForge: zinc surfaces + cyan `#06B6D4` accent.
 
 ## Theme
 
 **Dark only.** No light mode for MVP. The visual language is a calm, data-dense
 financial intelligence workspace — the same zinc terminal aesthetic as PineForge,
 applied to a research and relationship graph context. Near-black zinc backgrounds,
-layered surfaces, and neon `#c8ff00` as the single primary accent.
+layered surfaces, and cyan `#06B6D4` as the single primary accent.
 
 Every visual decision reinforces the product's core promise: signal over noise.
 Not loud, not noisy — a tool that feels like a trusted research terminal.
 
 ## Colors
 
-All components use Tailwind classes mapped to PineForge's zinc + neon system.
+All components use Tailwind classes mapped to PineForge's zinc + cyan system.
 **No hardcoded hex values in components.**
-**Neon (`#c8ff00`) is the single primary accent.** Do not introduce blue, purple,
-or teal as primary accents — use the relationship edge palette only for graph edges.
+**Cyan (`#06B6D4`) is the single primary accent.** Do not introduce purple
+or green as primary accents — use the relationship edge palette only for graph edges.
 
 
 | Role             | Tailwind Class                                               | Usage                                      |
 | ---------------- | ------------------------------------------------------------ | ------------------------------------------ |
-| Page background  | `pf-page` gradient `#0a0a0a → #151515` + neon radial glow    | Root page base                             |
+| Page background  | `pf-page` gradient `#0a0a0a → #151515` + cyan radial glow    | Root page base                             |
 | Card surface     | `bg-[#111111]`                                               | Standard cards, sidebar, panels            |
 | Card elevated    | `bg-[#111111]/80` + `backdrop-blur`                          | Modals, dropdowns, floating panels         |
 | Border           | `border-zinc-800` / `#27272a`                                | All card and input borders                 |
-| Accent           | `bg-neon-500` (`#c8ff00`)                                    | Primary CTA buttons, active nav indicators |
-| Accent hover     | `hover:bg-neon-500/10`                                       | Outlined button hover state                |
-| Accent text      | `text-neon-300` / `text-neon-400`                            | Accent labels, links, active states        |
-| Focus ring       | `focus-visible:ring-neon-500/30`                             | All inputs and buttons                     |
+| Accent           | `bg-cyan-500` (`#06B6D4`)                                    | Primary CTA buttons, active nav indicators |
+| Accent hover     | `hover:bg-cyan-500/10`                                       | Outlined button hover state                |
+| Accent text      | `text-cyan-300` / `text-cyan-400`                            | Accent labels, links, active states        |
+| Focus ring       | `focus-visible:ring-cyan-500/30`                             | All inputs and buttons                     |
 | Body text        | `text-zinc-100`                                              | Primary readable text                      |
 | Muted text       | `text-zinc-400`                                              | Labels, hints, metadata, secondary info    |
 | Subtle text      | `text-zinc-600`                                              | Placeholder, disabled states               |
-| Code / mono text | `text-neon-300/95` + `font-mono`                             | Ticker symbols, confidence scores, IDs     |
+| Code / mono text | `text-cyan-300/95` + `font-mono`                             | Ticker symbols, confidence scores, IDs     |
 | Code background  | `bg-black/55`                                                | Ticker pill background, data containers    |
 | Error background | `bg-rose-500/10`                                             | Error state card background                |
 | Error border     | `border-rose-500/30`                                         | Error state card border                    |
@@ -51,7 +51,7 @@ Use only when state semantics genuinely apply — not as generic palette variety
 
 | State                     | Tokens                                                       | FinRel usage                      |
 | ------------------------- | ------------------------------------------------------------ | --------------------------------- |
-| Positive / success / high | `text-neon-400` + `border-neon-500/40` + `bg-neon-500/10`    | High confidence (≥ 0.8), verified |
+| Positive / success / high | `text-cyan-400` + `border-cyan-500/40` + `bg-cyan-500/10`    | High confidence (≥ 0.8), verified |
 | Warning / medium / info   | `text-amber-400` + `border-amber-500/30` + `bg-amber-500/10` | Medium confidence (0.5–0.79)      |
 | Negative / error / low    | `text-rose-400` + `border-rose-500/40` + `bg-rose-500/10`    | Low confidence (< 0.5), errors    |
 
@@ -63,14 +63,14 @@ These colors are used exclusively for graph edges — not as UI accent colors.
 
 | Relationship type       | Tailwind approx | Hex       |
 | ----------------------- | --------------- | --------- |
-| `partnership`           | neon-500        | `#c8ff00` |
+| `partnership`           | cyan-500        | `#06B6D4` |
 | `supply_chain`          | violet-400      | `#a78bfa` |
 | `investment`            | emerald-400     | `#34d399` |
 | `executive_mention`     | amber-400       | `#fbbf24` |
 | `product_collaboration` | pink-400        | `#f472b6` |
 
 
-Partnership edges use the neon accent — it's the most significant relationship
+Partnership edges use the cyan accent — it's the most significant relationship
 type and the most likely to appear on a user's watchlist.
 
 ### Muted Metadata Badge
@@ -88,7 +88,7 @@ dark: border-zinc-700 bg-zinc-900/60 text-zinc-400
 Ticker symbols specifically:
 
 ```
-font-mono text-neon-300/95 bg-black/55 border border-zinc-800
+font-mono text-cyan-300/95 bg-black/55 border border-zinc-800
 rounded-md px-1.5 py-0.5 text-xs
 ```
 
@@ -142,13 +142,13 @@ makes the codebase readable and avoids re-implementing dark/light variants per c
 
 | Utility         | Purpose                                              |
 | --------------- | ---------------------------------------------------- |
-| `.fr-page`      | Root page background (`#0a0a0a`) + neon radial glow  |
+| `.fr-page`      | Root page background (`#0a0a0a`) + cyan radial glow  |
 | `.fr-nav`       | Sticky navbar background + backdrop-blur             |
 | `.fr-nav-muted` | Muted nav link / inactive pill                       |
 | `.fr-card`      | Standard card surface + zinc-800 border              |
 | `.fr-badge`     | Muted metadata badge (ticker, relation type, impact) |
 | `.fr-heading`   | Heading typography (Syne)                            |
-| `.fr-cta-btn`   | Primary neon-accent CTA button                       |
+| `.fr-cta-btn`   | Primary cyan-accent CTA button                       |
 
 
 ## Layout Patterns
@@ -159,13 +159,13 @@ makes the codebase readable and avoids re-implementing dark/light variants per c
 - **Briefing history**: Data table with filters bar at top (relation type, confidence threshold, date range, ticker). Load-more pattern — no pagination modals.
 - **Settings page**: Single column, grouped sections with `text-zinc-400` headings. Shows briefing time display (read-only) and email address (read-only, from Clerk). No Telegram section in MVP.
 - **Landing page**: Full-viewport hero, minimal sections — value proposition, 3-step how it works, demo CTA, signup. Max width `max-w-7xl mx-auto px-6`. Use `overflow-x-clip` (not `overflow-x-hidden`) on page shell.
-- **Demo banner**: Sticky top banner on demo dashboard — neon-accented, read-only notice with signup CTA. Never dismissible in demo mode.
+- **Demo banner**: Sticky top banner on demo dashboard — cyan-accented, read-only notice with signup CTA. Never dismissible in demo mode.
 - **Navbar**: Landing wraps ticker + navbar inside a single `sticky top-0 z-50` container. Background `bg-zinc-950/80 backdrop-blur-md`.
 
 ## Relationship Graph Specifics (React Flow)
 
-- **Company nodes**: Rounded rectangle (`rounded-xl`), `bg-[#111111]` surface, `border-zinc-800`. Company name in `font-sans text-zinc-100`, ticker symbol in `font-mono text-neon-300/95` below.
-- **Watchlist nodes**: Larger size + `border-neon-500/50` border to distinguish from discovered/peripheral companies.
+- **Company nodes**: Rounded rectangle (`rounded-xl`), `bg-[#111111]` surface, `border-zinc-800`. Company name in `font-sans text-zinc-100`, ticker symbol in `font-mono text-cyan-300/95` below.
+- **Watchlist nodes**: Larger size + `border-cyan-500/50` border to distinguish from discovered/peripheral companies.
 - **Edges**: Colored by relation type (see edge color table above). Label shown on hover only to avoid clutter.
 - **Edge thickness**: Scales with `confidence` score — thicker = higher confidence.
 - **Layout**: Force-directed (`dagre` or `elk`) for initial positioning.
@@ -190,7 +190,7 @@ Confidence (0–1 float) always displayed as percentage + label using semantic s
 
 | Score    | Token                   | Label    |
 | -------- | ----------------------- | -------- |
-| ≥ 0.8    | `text-neon-400` (green) | "High"   |
+| ≥ 0.8    | `text-cyan-400`         | "High"   |
 | 0.5–0.79 | `text-amber-400`        | "Medium" |
 | < 0.5    | `text-rose-400`         | "Low"    |
 
