@@ -186,7 +186,7 @@ export async function fetchWatchlistNews(
   await persistNewsItems(input.userId, newItems);
 
   const output = {
-    newsItems: newItems.map(({ rawContentHash: _hash, ...item }) => item),
+    newsItems: newItems.map(({ rawContentHash: _, ...item }) => item),
   };
 
   return fetchNewsOutputSchema.parse(output);

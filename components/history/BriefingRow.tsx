@@ -89,6 +89,7 @@ export function BriefingRow({
 
     let cancelled = false;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadRelationships(() => cancelled);
 
     return () => {

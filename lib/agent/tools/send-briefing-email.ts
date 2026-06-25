@@ -1,14 +1,16 @@
 import { Resend } from "resend";
-import { z } from "zod";
-
-import { env } from "@/lib/agent/env";
-import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
-const sendBriefingEmailInputSchema = z.object({
-  userId: z.string(),
-  summary: z.string(),
-});
+import { env } from "@/lib/agent/env";
+import {
+  buildBriefingHtml,
+  buildBriefingText,
+} from "@/lib/agent/tools/briefing-email-template";
+import { db, users } from "@/lib/db";
+import {
+  extractionOutputSchema,
+  type ExtractionOutput,
+} from "@/lib/schemas/relationships";
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "briefing@finrel.dev";
 
@@ -23,20 +25,8 @@ function formatBriefingDate(): string {
   });
 }
 
-function buildEmailBody(summary: string): string {
-  return `FinRel Morning Briefing
-
-${summary}
-
-—
-FinRel — your watchlist relationship intelligence`;
-}
-
-export async function sendBriefingEmail(
-  userId: string,
-  summary: string,
-): Promise<void> {
-  const input = sendBriefingEmailInputSchema.parse({ userId, summary });
+export async function sendBriefingEmail(output: ExtractionOutput): Promise<void> {
+  const input = extractionOutputSchema.parse(output);
 
   const [user] = await db
     .select({ email: users.email })
@@ -56,7 +46,8 @@ export async function sendBriefingEmail(
       from: FROM_EMAIL,
       to: user.email,
       subject: `FinRel Morning Briefing — ${formatBriefingDate()}`,
-      text: buildEmailBody(input.summary),
+      html: buildBriefingHtml(input.summary, input.relationships),
+      text: buildBriefingText(input.summary, input.relationships),
     });
 
     if (result.error) {

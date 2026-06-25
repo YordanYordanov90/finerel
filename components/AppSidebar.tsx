@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   List,
   Network,
+  Newspaper,
   Settings,
   X,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/news", label: "News", icon: Newspaper },
   { href: "/graph", label: "Graph", icon: Network },
   { href: "/history", label: "History", icon: Clock3 },
   { href: "/watchlist", label: "Watchlist", icon: List },
@@ -37,7 +39,7 @@ export function AppSidebar({ isOpen, onClose, isDemo = false }: AppSidebarProps)
     <aside
       className={[
         "fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col border-r border-zinc-800 bg-[#111111]",
-        "transition-transform duration-200 ease-out md:static md:z-auto md:translate-x-0",
+        "transition-transform duration-200 ease-out md:sticky md:top-0 md:z-auto md:h-screen md:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full",
       ].join(" ")}
     >
