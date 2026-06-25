@@ -159,6 +159,8 @@ makes the codebase readable and avoids re-implementing dark/light variants per c
 - **Briefing history**: Data table with filters bar at top (relation type, confidence threshold, date range, ticker). Load-more pattern — no pagination modals.
 - **Settings page**: Single column, grouped sections with `text-zinc-400` headings. Shows briefing time display (read-only) and email address (read-only, from Clerk). No Telegram section in MVP.
 - **Landing page**: Full-viewport hero, minimal sections — value proposition, 3-step how it works, demo CTA, signup. Max width `max-w-7xl mx-auto px-6`. Use `overflow-x-clip` (not `overflow-x-hidden`) on page shell.
+- **News feed page**: Single-column list of article cards. Each card: headline (clickable link → external), 2-line clamped summary, source name, relative timestamp (`3h ago`), ticker pills. "Up to date / Checking…" status + manual Refresh button (hidden in demo mode). Background Finnhub refresh fires on mount; stored news shows instantly.
+- **Ticker autocomplete**: Dropdown beneath the ticker input. Appears on first keystroke, lists up to 8 matches ranked exact → prefix → name. Keyboard-navigable (↑↓ arrows, Enter to select, Escape to dismiss). Click also selects. ARIA `combobox`/`listbox`/`option` roles for accessibility. Suggestion rows: ticker symbol in `font-mono text-cyan-300/95` (fixed 56px width), company name in `text-zinc-400`.
 - **Demo banner**: Sticky top banner on demo dashboard — cyan-accented, read-only notice with signup CTA. Never dismissible in demo mode.
 - **Navbar**: Landing wraps ticker + navbar inside a single `sticky top-0 z-50` container. Background `bg-zinc-950/80 backdrop-blur-md`.
 

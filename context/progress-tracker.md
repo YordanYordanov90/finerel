@@ -25,18 +25,22 @@ Update this file after every meaningful implementation change.
 | 17 | [Demo Data Seeding](features/17-demo-seeding.md) | ✅ Done |
 | 18 | [Loading States](features/18-loading-state.md) | ✅ Done |
 | 19 | [Error Handling](features/19-error-handling.md) | ✅ Done |
+| 20 | [Ticker Autocomplete](features/20-ticker-autocomplete.md) | ✅ Done |
+| 21 | [Settings PATCH + Interactive Time Picker](features/21-settings-patch.md) | ✅ Done |
+| 22 | [HTML Briefing Email](features/22-html-email.md) | ✅ Done |
+| 23 | [News Feed Page](features/23-news-feed.md) | ✅ Done |
 
-**Progress: 19 / 19 features complete**
+**Progress: 23 / 23 features complete**
 
 ---
 
 ## Current Phase
 
-Phase 1 — Foundation (Complete)
+Phase 1 — Foundation + Production (Complete)
 
 ## Current Goal
 
-Phase 2 planning — interactive agent, production hardening.
+Deployed to production (finerel.vercel.app). QStash schedule live (`0 3-19 * * *` UTC). Resend domain verification pending — currently limited to owner email only.
 
 ## Completed
 
@@ -155,12 +159,12 @@ Phase 2 planning — interactive agent, production hardening.
 
 ## In Progress
 
-- None yet.
+- None.
 
 ## Next Up
 
-1. Set `DEMO_USER_ID` in `.env.local` to the Clerk demo account `userId` (fallback `user_demo_finrel` used until configured).
-2. Verify Resend domain and run first live cron briefing.
+1. Verify a custom domain in Resend to enable sending briefing emails to users other than the owner.
+2. Per-user briefing time in the cron is respected — but `briefingTime` only supports full-hour values. Settings UI enforces this (dropdown, whole hours only).
 
 ## Open Questions
 
@@ -191,6 +195,12 @@ Phase 2 planning — interactive agent, production hardening.
 
 ## Session Notes
 
+- News feed implemented (June 25, 2026). `GET /api/news` returns stored news for user's watchlist tickers via `arrayOverlaps`; `?refresh=true` fetches fresh from Finnhub before reading back. `NewsFeed` client component: loads stored news instantly, fires background Finnhub refresh, manual Refresh button. `/news` + `/demo/news` pages. News added to sidebar nav.
+- HTML briefing email implemented (June 25, 2026). `lib/agent/tools/briefing-email-template.ts` — `buildBriefingHtml()` renders FinRel-branded relationship cards (source → target, ticker pills in cyan mono, relation-type badge, color-coded impact, confidence %, context snippet, source link). `buildBriefingText()` plain-text fallback. `send-briefing-email.ts` now takes full `ExtractionOutput` and sends both `html` + `text`.
+- Settings PATCH implemented (June 25, 2026). `PATCH /api/settings` validates `HH:MM` format, updates `briefingTime` in `users` table. `BriefingTimeSection` converted to client component with hourly dropdown (06:00–22:00 EEST) and Save button; disabled for demo users.
+- Ticker autocomplete implemented (June 25, 2026). `lib/data/tickers.ts` — ~250 major US tickers with `searchTickers()` (exact symbol → prefix → name match ranking). `AddTickerInput` shows dropdown on type, keyboard-navigable (arrows/Enter/Escape), click-to-select. Ticker validation regex updated to allow dots (`BRK.B`).
+- QStash cron updated to hourly (`0 3-19 * * *` UTC). Route now queries only users whose `briefingTime` matches current EEST hour (`currentEestHour()` helper). Per-user scheduling without managing per-user QStash schedules. Deployed and verified live (June 24, 2026).
+- Foreign key fix: `POST /api/watchlist` now upserts the user into the `users` table before inserting the watchlist row. Resolves `watchlists_userId_users_id_fk` violation for users whose Clerk webhook was never delivered (June 24, 2026).
 - Error handling — complete (June 23, 2026). Low priority: `MAX_PAGES` guard on `fetchAllRelationships`, Retry buttons on `TickerList`/`BriefingTable`/`BriefingRow`, demo-not-configured warning in `getAuthOrDemoUserId`.
 - Error handling — medium priority (June 23, 2026). `parseResponse()` hardened in `watchlist-api.ts` + `history-api.ts`; `app/not-found.tsx` themed 404; Clerk webhook DB insert wrapped in try/catch.
 - Error handling — high priority (June 23, 2026). `app/(app)/error.tsx` + `app/global-error.tsx` boundaries; try/catch on all six API routes (`briefings`, `relationships`, `graph`, `watchlist`, `watchlist/[ticker]`, `settings`) with structured 500 responses and route-prefixed logging.

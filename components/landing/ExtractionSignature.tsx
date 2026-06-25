@@ -56,12 +56,14 @@ const EXTRACTIONS: Extraction[] = [
 const CYCLE_MS = 5200;
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(query.matches);
-
     const onChange = () => setReduced(query.matches);
     query.addEventListener("change", onChange);
     return () => query.removeEventListener("change", onChange);
@@ -113,19 +115,15 @@ export function ExtractionSignature() {
   }, [reduced]);
 
   useEffect(() => {
+    if (reduced) return;
+
     const target = current.confidence;
-
-    if (reduced) {
-      setDisplayed(target);
-      return;
-    }
-
-    setDisplayed(0);
     const startDelay = 650;
     const duration = 750;
     let start: number | null = null;
 
     const timeout = setTimeout(() => {
+      setDisplayed(0);
       const step = (timestamp: number) => {
         if (start === null) {
           start = timestamp;
@@ -149,7 +147,8 @@ export function ExtractionSignature() {
     };
   }, [index, current.confidence, reduced]);
 
-  const meterFilled = Math.round((displayed / 100) * 12);
+  const displayedValue = reduced ? current.confidence : displayed;
+  const meterFilled = Math.round((displayedValue / 100) * 12);
 
   return (
     <div className="lp-panel relative overflow-hidden p-5">
@@ -249,7 +248,7 @@ export function ExtractionSignature() {
               ))}
             </div>
             <span className="lp-mono text-sm font-medium text-[color:var(--lp-text)]">
-              {displayed}%
+              {displayedValue}%
             </span>
             {current.impact === "high" ? (
               <span

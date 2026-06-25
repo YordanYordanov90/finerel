@@ -39,6 +39,7 @@ export function BriefingTable({ isDemo = false }: BriefingTableProps) {
       setLoadingMore(true);
     } else {
       setLoading(true);
+      setExpandedId(null);
     }
 
     setError(null);
@@ -67,7 +68,7 @@ export function BriefingTable({ isDemo = false }: BriefingTableProps) {
   }, [isDemo]);
 
   useEffect(() => {
-    setExpandedId(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadBriefings(0, false);
   }, [loadBriefings]);
 

@@ -29,18 +29,6 @@ export function AddTickerInput({ readOnly, onAdded }: AddTickerInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (value.length >= 1) {
-      const results = searchTickers(value);
-      setSuggestions(results);
-      setShowSuggestions(results.length > 0);
-      setHighlightedIndex(-1);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [value]);
-
-  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
@@ -102,6 +90,15 @@ export function AddTickerInput({ readOnly, onAdded }: AddTickerInputProps) {
 
     if (next === "" || TICKER_PATTERN.test(next)) {
       setValue(next);
+      if (next.length >= 1) {
+        const results = searchTickers(next);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+      setHighlightedIndex(-1);
     }
   }
 

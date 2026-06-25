@@ -67,7 +67,9 @@
 
 - `app/api/cron/` — QStash-triggered cron routes (morning briefing pipeline).
 - `lib/agent/` — Agent infrastructure: QStash verification, env validation, tool implementations.
-- `lib/agent/tools/` — One file per tool (`fetch-watchlist-news.ts`, `extract-relationships.ts`, etc.).
+- `lib/agent/tools/` — One file per tool (`fetch-watchlist-news.ts`, `extract-relationships.ts`, `briefing-email-template.ts`, etc.).
+- `lib/data/` — Static bundled data (e.g. `tickers.ts` — ~250 major US tickers with `searchTickers()` helper).
+- `lib/utils/` — Client-side fetch helpers per domain (`watchlist-api.ts`, `news-api.ts`, `history-api.ts`).
 - `app/` — Next.js App Router pages and layouts.
 - `app/api/` — API route handlers (read-only for relationships/briefings).
 - `lib/db/` — Drizzle schema, migrations, and typed query helpers.

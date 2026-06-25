@@ -48,15 +48,18 @@
 ## Data Flow — Morning Briefing
 
 ```
-QStash (09:00 EEST cron)
+QStash (hourly cron, 0 3-19 * * * UTC)
   → POST /api/cron/morning-briefing (Vercel)
       → Verify QStash signature
-      → fetch_watchlist_news (Finnhub, per user)
-      → extract_relationships (Vercel AI SDK + models.extraction + Zod)
-      → store_relationships (Drizzle → Neon Postgres)
-      → generate_briefing_summary
-      → send email via Resend
+      → currentEestHour() → filter users whose briefingTime matches
+      → For each matched user:
+          → fetch_watchlist_news (Finnhub, per ticker)
+          → extract_relationships (Vercel AI SDK + models.extraction + Zod)
+          → store_relationships (Drizzle → Neon Postgres)
+          → send_briefing_email (HTML + text, via Resend)
 ```
+
+Each user receives their briefing at their own configured hour (stored as `HH:00` in `users.briefingTime`, EEST). The cron runs every hour but only processes users scheduled for that hour — no per-user QStash schedules needed.
 
 ## Relationship Graph Model
 

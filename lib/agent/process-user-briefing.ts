@@ -75,7 +75,7 @@ export async function processUserBriefing(
   }
 
   try {
-    await sendBriefingEmail(userId, output.summary);
+    await sendBriefingEmail(output);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "unknown email error";
