@@ -13,7 +13,8 @@ import {
   type ExtractionOutput,
 } from "@/lib/schemas/relationships";
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "briefing@finrel.dev";
+// Must be on the Resend-verified domain (finerel.com) or the send is rejected.
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "briefing@finerel.com";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
