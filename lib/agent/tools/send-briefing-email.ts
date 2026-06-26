@@ -7,6 +7,7 @@ import {
   buildBriefingText,
 } from "@/lib/agent/tools/briefing-email-template";
 import { db, users } from "@/lib/db";
+import { type NewsItem } from "@/lib/schemas/news";
 import {
   extractionOutputSchema,
   type ExtractionOutput,
@@ -25,7 +26,10 @@ function formatBriefingDate(): string {
   });
 }
 
-export async function sendBriefingEmail(output: ExtractionOutput): Promise<void> {
+export async function sendBriefingEmail(
+  output: ExtractionOutput,
+  newsItems: NewsItem[] = [],
+): Promise<void> {
   const input = extractionOutputSchema.parse(output);
 
   const [user] = await db
@@ -46,8 +50,8 @@ export async function sendBriefingEmail(output: ExtractionOutput): Promise<void>
       from: FROM_EMAIL,
       to: user.email,
       subject: `FinRel Morning Briefing — ${formatBriefingDate()}`,
-      html: buildBriefingHtml(input.summary, input.relationships),
-      text: buildBriefingText(input.summary, input.relationships),
+      html: buildBriefingHtml(input.summary, input.relationships, newsItems),
+      text: buildBriefingText(input.summary, input.relationships, newsItems),
     });
 
     if (result.error) {
