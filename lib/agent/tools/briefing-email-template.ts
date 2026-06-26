@@ -1,8 +1,14 @@
+import type { NewsItem } from "@/lib/schemas/news";
 import type {
   ExtractedRelationship,
   ImpactLevel,
   RelationType,
 } from "@/lib/schemas/relationships";
+
+// On quiet days (no new relationships) the email surfaces the headlines the
+// agent scanned, so the briefing always carries value.
+const MAX_HEADLINES = 8;
+const MAX_TICKERS_PER_HEADLINE = 4;
 
 const RELATION_LABELS: Record<RelationType, string> = {
   partnership: "Partnership",
@@ -87,9 +93,92 @@ function renderRelationship(rel: ExtractedRelationship): string {
   </tr>`;
 }
 
+function prepareHeadlines(newsItems: NewsItem[]): NewsItem[] {
+  const seen = new Set<string>();
+  const unique: NewsItem[] = [];
+
+  for (const item of newsItems) {
+    const key = item.headline.trim().toLowerCase();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+
+  return unique
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .slice(0, MAX_HEADLINES);
+}
+
+function renderTickerPills(tickers: string[]): string {
+  return tickers
+    .slice(0, MAX_TICKERS_PER_HEADLINE)
+    .map(
+      (ticker) =>
+        `<span style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;color:${CYAN};margin-left:6px;">${escapeHtml(
+          ticker,
+        )}</span>`,
+    )
+    .join("");
+}
+
+function renderHeadline(item: NewsItem): string {
+  return `
+  <tr>
+    <td style="padding:0 0 10px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border:1px solid ${BORDER};border-radius:8px;">
+        <tr>
+          <td style="padding:14px 16px;">
+            <a href="${escapeHtml(
+              item.url,
+            )}" style="font-size:14px;line-height:1.45;color:${TEXT};text-decoration:none;font-weight:600;">${escapeHtml(
+              item.headline,
+            )}</a>
+            <div style="margin-top:8px;font-size:11px;color:${MUTED};">
+              ${escapeHtml(item.source)}${renderTickerPills(item.mentionedTickers)}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+function renderHeadlinesBlock(newsItems: NewsItem[]): string {
+  const headlines = prepareHeadlines(newsItems);
+
+  if (headlines.length === 0) {
+    return `
+      <tr>
+        <td style="padding:8px 0;">
+          <div style="font-size:14px;color:${MUTED};">
+            No new relationships found today.
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  return `
+      <tr>
+        <td style="padding:8px 0 4px 0;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:${MUTED};margin-bottom:12px;">
+            Today's watchlist headlines (${headlines.length})
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${headlines.map(renderHeadline).join("")}
+          </table>
+        </td>
+      </tr>`;
+}
+
 export function buildBriefingHtml(
   summary: string,
   relationships: ExtractedRelationship[],
+  newsItems: NewsItem[] = [],
 ): string {
   const date = formatBriefingDate();
 
@@ -110,14 +199,7 @@ export function buildBriefingHtml(
           </table>
         </td>
       </tr>`
-      : `
-      <tr>
-        <td style="padding:8px 0;">
-          <div style="font-size:14px;color:${MUTED};">
-            No new relationships found today.
-          </div>
-        </td>
-      </tr>`;
+      : renderHeadlinesBlock(newsItems);
 
   return `<!DOCTYPE html>
 <html>
@@ -166,6 +248,7 @@ export function buildBriefingHtml(
 export function buildBriefingText(
   summary: string,
   relationships: ExtractedRelationship[],
+  newsItems: NewsItem[] = [],
 ): string {
   const lines = [`FinRel Morning Briefing`, ``, summary, ``];
 
@@ -189,6 +272,21 @@ export function buildBriefingText(
         `  ${rel.sourceUrl}`,
         ``,
       );
+    }
+  } else {
+    const headlines = prepareHeadlines(newsItems);
+
+    if (headlines.length > 0) {
+      lines.push(`Today's watchlist headlines (${headlines.length}):`, ``);
+
+      for (const item of headlines) {
+        const tickers = item.mentionedTickers
+          .slice(0, MAX_TICKERS_PER_HEADLINE)
+          .join(", ");
+        const meta = tickers ? `${item.source} · ${tickers}` : item.source;
+
+        lines.push(`• ${item.headline}`, `  ${meta}`, `  ${item.url}`, ``);
+      }
     }
   }
 
