@@ -10,6 +10,11 @@ import {
 
 const FALLBACK_SUMMARY = "No new relationships found today.";
 
+// extract_relationships caps input at 50 items per call (see core-intelligence-spec
+// §1). Larger batches must be chunked before calling the tool, or the input parse
+// throws and the run silently falls back to an empty briefing.
+const EXTRACTION_BATCH_SIZE = 50;
+
 function buildFallbackOutput(
   userId: string,
   itemsProcessed = 0,
@@ -20,6 +25,58 @@ function buildFallbackOutput(
     itemsProcessed,
     userId,
   });
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
+}
+
+function mergeExtractionOutputs(
+  userId: string,
+  outputs: ExtractionOutput[],
+  itemsProcessed: number,
+): ExtractionOutput {
+  const relationships = outputs.flatMap((o) => o.relationships);
+
+  // Use the summary from the batch that surfaced the most relationships;
+  // fall back to the standard line when no batch found anything.
+  const bestSummary = outputs
+    .filter((o) => o.relationships.length > 0)
+    .sort((a, b) => b.relationships.length - a.relationships.length)[0]?.summary;
+
+  return extractionOutputSchema.parse({
+    relationships,
+    summary: bestSummary ?? FALLBACK_SUMMARY,
+    itemsProcessed,
+    userId,
+  });
+}
+
+async function extractInBatches(
+  userId: string,
+  tickers: string[],
+  items: NewsItem[],
+): Promise<ExtractionOutput> {
+  const batches = chunk(items, EXTRACTION_BATCH_SIZE);
+  const outputs: ExtractionOutput[] = [];
+
+  for (const batch of batches) {
+    // extractRelationships catches its own errors and returns a fallback,
+    // so a single bad batch never aborts the rest of the run.
+    outputs.push(
+      await extractRelationships({
+        newsItems: batch,
+        focusTickers: tickers,
+        userId,
+      }),
+    );
+  }
+
+  return mergeExtractionOutputs(userId, outputs, items.length);
 }
 
 export async function processUserBriefing(
@@ -37,11 +94,7 @@ export async function processUserBriefing(
       output = buildFallbackOutput(userId);
     } else {
       try {
-        output = await extractRelationships({
-          newsItems: fetchResult.newsItems,
-          focusTickers: tickers,
-          userId,
-        });
+        output = await extractInBatches(userId, tickers, fetchResult.newsItems);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "unknown extraction error";

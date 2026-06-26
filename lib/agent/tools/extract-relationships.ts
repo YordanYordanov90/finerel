@@ -3,8 +3,10 @@ import { generateObject } from "ai";
 import { models } from "@/lib/models";
 import {
   extractionInputSchema,
+  extractionModelSchema,
   extractionOutputSchema,
   type ExtractionInput,
+  type ExtractionModelOutput,
   type ExtractionOutput,
 } from "@/lib/schemas/relationships";
 
@@ -56,18 +58,34 @@ ${articles}
 Return all relationships found. If an article contains no clear relationship between named companies, skip it. Write the summary field as a 2–4 sentence plain-language briefing suitable for an email — name the most significant relationships found today.`;
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+// Sanitize the strict-mode-clean model output back into the canonical schema:
+// map null tickers to undefined, clamp confidence, and truncate over-long text
+// so the final parse never throws on recoverable model output.
 function applyToolOverrides(
-  object: ExtractionOutput,
+  object: ExtractionModelOutput,
   input: ExtractionInput,
 ): ExtractionOutput {
   const extractedAt = new Date().toISOString();
 
   return extractionOutputSchema.parse({
-    ...object,
+    summary: object.summary.slice(0, 500),
     userId: input.userId,
     itemsProcessed: input.newsItems.length,
     relationships: object.relationships.map((relationship) => ({
-      ...relationship,
+      sourceCompany: relationship.sourceCompany,
+      sourceTicker: relationship.sourceTicker ?? undefined,
+      targetCompany: relationship.targetCompany,
+      targetTicker: relationship.targetTicker ?? undefined,
+      relationType: relationship.relationType,
+      confidence: clamp(relationship.confidence, 0, 1),
+      impactLevel: relationship.impactLevel,
+      contextSnippet: relationship.contextSnippet.slice(0, 300),
+      sourceNewsId: relationship.sourceNewsId,
+      sourceUrl: relationship.sourceUrl,
       extractedAt,
     })),
   });
@@ -90,7 +108,7 @@ export async function extractRelationships(
   try {
     const { object } = await generateObject({
       model: models.extraction,
-      schema: extractionOutputSchema,
+      schema: extractionModelSchema,
       system: SYSTEM_PROMPT,
       prompt: buildExtractionPrompt(input),
     });
