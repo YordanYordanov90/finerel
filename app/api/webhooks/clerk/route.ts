@@ -1,6 +1,8 @@
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import type { NextRequest } from "next/server";
 
+import { sql } from "drizzle-orm";
+
 import { db, users } from "@/lib/db";
 import {
   clerkUserCreatedEventSchema,
@@ -35,7 +37,11 @@ export async function POST(request: NextRequest) {
     await db
       .insert(users)
       .values({ id: userData.id, email })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: users.id,
+        set: { email },
+        setWhere: sql`${email} != ''`,
+      });
   } catch (error) {
     console.error("[api/webhooks/clerk] database error", {
       error: error instanceof Error ? error.message : "unknown",
