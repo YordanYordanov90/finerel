@@ -216,7 +216,7 @@ export function buildBriefingHtml(
           <tr>
             <td style="padding-bottom:24px;border-bottom:1px solid ${BORDER};">
               <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">
-                <span style="color:${TEXT};">Fin</span><span style="color:${CYAN};">Rel</span>
+                <span style="color:${TEXT};">Fine</span><span style="color:${CYAN};">rel</span>
               </div>
               <div style="font-size:14px;color:${TEXT};margin-top:8px;">Morning Briefing</div>
               <div style="font-size:12px;color:${MUTED};margin-top:2px;">${date}</div>
@@ -233,7 +233,7 @@ export function buildBriefingHtml(
           <tr>
             <td style="padding-top:24px;border-top:1px solid ${BORDER};">
               <div style="font-size:11px;color:${MUTED};line-height:1.5;">
-                FinRel &mdash; your watchlist relationship intelligence.
+                Finerel &mdash; your watchlist relationship intelligence.
               </div>
             </td>
           </tr>
@@ -250,7 +250,7 @@ export function buildBriefingText(
   relationships: ExtractedRelationship[],
   newsItems: NewsItem[] = [],
 ): string {
-  const lines = [`FinRel Morning Briefing`, ``, summary, ``];
+  const lines = [`Finerel Morning Briefing`, ``, summary, ``];
 
   if (relationships.length > 0) {
     lines.push(`Relationships found (${relationships.length}):`, ``);
@@ -290,7 +290,7 @@ export function buildBriefingText(
     }
   }
 
-  lines.push(`—`, `FinRel — your watchlist relationship intelligence`);
+  lines.push(`—`, `Finerel — your watchlist relationship intelligence`);
 
   return lines.join("\n");
 }

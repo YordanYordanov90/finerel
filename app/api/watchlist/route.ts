@@ -1,5 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import { getAuthOrDemoUserId, isDemoUser } from "@/lib/auth";
 import { db, users, watchlists } from "@/lib/db";
@@ -79,7 +79,11 @@ export async function POST(request: Request) {
     await db
       .insert(users)
       .values({ id: userId, email })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: users.id,
+        set: { email },
+        setWhere: sql`${email} != ''`,
+      });
 
     const existing = await db
       .select({ id: watchlists.id })

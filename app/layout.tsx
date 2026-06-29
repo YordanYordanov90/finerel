@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinRel",
+  title: "Finerel",
   description: "AI-powered financial relationship intelligence for your watchlist",
 };
 

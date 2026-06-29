@@ -35,7 +35,7 @@ export function LandingFooter() {
         </nav>
 
         <p className="lp-mono text-[11px] text-[color:var(--lp-faint)]">
-          © {new Date().getFullYear()} FinRel
+          © {new Date().getFullYear()} Finerel
         </p>
       </div>
     </footer>

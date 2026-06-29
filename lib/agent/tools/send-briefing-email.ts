@@ -50,7 +50,7 @@ export async function sendBriefingEmail(
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
-      subject: `FinRel Morning Briefing — ${formatBriefingDate()}`,
+      subject: `Finerel Morning Briefing — ${formatBriefingDate()}`,
       html: buildBriefingHtml(input.summary, input.relationships, newsItems),
       text: buildBriefingText(input.summary, input.relationships, newsItems),
     });

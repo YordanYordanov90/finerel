@@ -27,7 +27,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-lg text-base leading-relaxed text-[color:var(--lp-muted)] md:text-lg">
-            FinRel reads overnight financial news on your watchlist and turns it
+            Finerel reads overnight financial news on your watchlist and turns it
             into a structured map of who&apos;s connected to whom — every
             partnership, supply line, and stake, scored and dated.
           </p>

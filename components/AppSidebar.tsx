@@ -49,8 +49,8 @@ export function AppSidebar({ isOpen, onClose, isDemo = false }: AppSidebarProps)
           className="fr-heading text-xl font-semibold tracking-tight"
           onClick={onClose}
         >
-          <span className="text-zinc-100">Fin</span>
-          <span className="text-cyan-400">Rel</span>
+          <span className="text-zinc-100">Fine</span>
+          <span className="text-cyan-400">rel</span>
         </Link>
         <button
           type="button"

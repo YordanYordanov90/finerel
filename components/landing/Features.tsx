@@ -120,7 +120,7 @@ export function Features() {
             A research tool, not a news feed
           </h2>
           <p className="mt-4 text-sm text-[color:var(--lp-muted)] md:text-base">
-            Every part of FinRel exists to surface a connection you&apos;d
+            Every part of Finerel exists to surface a connection you&apos;d
             otherwise miss.
           </p>
         </div>
