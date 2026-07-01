@@ -5,6 +5,7 @@ import {
   streamText,
   validateUIMessages,
   type UIMessage,
+  type UIMessageStreamOnFinishCallback,
 } from "ai";
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ import { isDemoUser } from "@/lib/auth";
 import {
   appendTurn,
   ChatAccessError,
-  loadThreadMessages,
+  loadMessages,
   resolveThreadId,
 } from "@/lib/data/chat";
 import { models } from "@/lib/models";
@@ -79,37 +80,114 @@ function getAssistantMessage(messages: UIMessage[]): UIMessage | undefined {
   return last?.role === "assistant" ? last : undefined;
 }
 
-export const POST = protectAiRoute(async (request, userId) => {
+type ParsedChatRequest = z.infer<typeof chatPostSchema>;
+
+async function parseChatRequest(
+  request: Request,
+): Promise<{ data: ParsedChatRequest } | { errorResponse: Response }> {
   let body: unknown;
 
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+    return {
+      errorResponse: Response.json({ error: "Invalid JSON body" }, { status: 400 }),
+    };
   }
 
   const parsed = chatPostSchema.safeParse(body);
 
   if (!parsed.success) {
     const message = parsed.error.issues[0]?.message ?? "Invalid input";
-    return Response.json({ error: message }, { status: 400 });
+    return { errorResponse: Response.json({ error: message }, { status: 400 }) };
   }
 
-  const { message } = parsed.data;
-  const requestedThreadId = parsed.data.threadId ?? parsed.data.id;
+  return { data: parsed.data };
+}
 
-  let threadId: string;
-
+async function resolveChatThread(
+  userId: string,
+  requestedThreadId: string | undefined,
+): Promise<{ threadId: string } | { errorResponse: Response }> {
   try {
-    ({ threadId } = await resolveThreadId(userId, requestedThreadId));
+    const { threadId } = await resolveThreadId(userId, requestedThreadId);
+    return { threadId };
   } catch (error) {
     if (error instanceof ChatAccessError) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+      return { errorResponse: Response.json({ error: "Forbidden" }, { status: 403 }) };
     }
     throw error;
   }
+}
 
-  const priorMessages = await loadThreadMessages(userId, threadId);
+async function buildValidatedMessages(
+  priorMessages: UIMessage[],
+  userMessage: UIMessage,
+  logContext: { userId: string; threadId: string },
+): Promise<{ messages: UIMessage[] } | { errorResponse: Response }> {
+  try {
+    const messages = await validateUIMessages({
+      messages: [...priorMessages, userMessage],
+    });
+    return { messages };
+  } catch (error) {
+    console.error("[api/chat] message validation failed", {
+      ...logContext,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return {
+      errorResponse: Response.json({ error: "Invalid message format" }, { status: 400 }),
+    };
+  }
+}
+
+function createOnFinish(
+  userId: string,
+  threadId: string,
+  userMessage: UIMessage,
+): UIMessageStreamOnFinishCallback<UIMessage> {
+  return async ({ messages, isAborted }) => {
+    if (isDemoUser(userId) || isAborted) {
+      return;
+    }
+
+    const assistantMessage = getAssistantMessage(messages);
+    if (!assistantMessage) {
+      return;
+    }
+
+    try {
+      await appendTurn(threadId, userMessage, {
+        ...assistantMessage,
+        // Defensive: never persist an empty id even if id generation is bypassed.
+        id: assistantMessage.id || generateId(),
+      });
+    } catch (error) {
+      console.error("[api/chat] persistence failed", {
+        userId,
+        threadId,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+  };
+}
+
+export const POST = protectAiRoute(async (request, userId) => {
+  const parsedRequest = await parseChatRequest(request);
+  if ("errorResponse" in parsedRequest) {
+    return parsedRequest.errorResponse;
+  }
+
+  const { message, context } = parsedRequest.data;
+  const requestedThreadId = parsedRequest.data.threadId ?? parsedRequest.data.id;
+
+  const resolvedThread = await resolveChatThread(userId, requestedThreadId);
+  if ("errorResponse" in resolvedThread) {
+    return resolvedThread.errorResponse;
+  }
+  const { threadId } = resolvedThread;
+
+  const priorMessages = await loadMessages(threadId);
 
   const userMessage: UIMessage = {
     id: message.id,
@@ -117,26 +195,20 @@ export const POST = protectAiRoute(async (request, userId) => {
     parts: message.parts as UIMessage["parts"],
   };
 
-  const tools = buildChatTools(userId);
-
-  let validatedMessages: UIMessage[];
-
-  try {
-    validatedMessages = await validateUIMessages({
-      messages: [...priorMessages, userMessage],
-    });
-  } catch (error) {
-    console.error("[api/chat] message validation failed", {
-      userId,
-      threadId,
-      error: error instanceof Error ? error.message : "unknown",
-    });
-    return Response.json({ error: "Invalid message format" }, { status: 400 });
+  const validated = await buildValidatedMessages(priorMessages, userMessage, {
+    userId,
+    threadId,
+  });
+  if ("errorResponse" in validated) {
+    return validated.errorResponse;
   }
+  const { messages: validatedMessages } = validated;
+
+  const tools = buildChatTools(userId);
 
   const result = streamText({
     model: models.chat,
-    system: buildSystemPrompt(parsed.data.context),
+    system: buildSystemPrompt(context),
     tools,
     messages: await convertToModelMessages(validatedMessages),
     stopWhen: stepCountIs(TOOL_STEP_CAP),
@@ -150,7 +222,13 @@ export const POST = protectAiRoute(async (request, userId) => {
   });
 
   if (!isDemoUser(userId)) {
-    result.consumeStream();
+    void Promise.resolve(result.consumeStream()).catch((error: unknown) => {
+      console.error("[api/chat] consume stream error", {
+        userId,
+        threadId,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    });
   }
 
   return result.toUIMessageStreamResponse({
@@ -160,30 +238,7 @@ export const POST = protectAiRoute(async (request, userId) => {
     // the primary key, only the first assistant message ever persists and every
     // later turn collides on "" (chat_messages_pkey). Generate a real id.
     generateMessageId: generateId,
-    onFinish: async ({ messages, isAborted }) => {
-      if (isDemoUser(userId) || isAborted) {
-        return;
-      }
-
-      const assistantMessage = getAssistantMessage(messages);
-      if (!assistantMessage) {
-        return;
-      }
-
-      try {
-        await appendTurn(threadId, userMessage, {
-          ...assistantMessage,
-          // Defensive: never persist an empty id even if id generation is bypassed.
-          id: assistantMessage.id || generateId(),
-        });
-      } catch (error) {
-        console.error("[api/chat] persistence failed", {
-          userId,
-          threadId,
-          error: error instanceof Error ? error.message : "unknown",
-        });
-      }
-    },
+    onFinish: createOnFinish(userId, threadId, userMessage),
     onError: () => "Something went wrong. Please try again.",
   });
 });

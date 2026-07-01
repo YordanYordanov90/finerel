@@ -15,14 +15,13 @@ import type { ChatThreadSummary } from "@/lib/data/chat";
 import { cn } from "@/lib/utils";
 
 type ChatSurfaceProps = {
-  threads: ChatThreadSummary[];
+  threads?: ChatThreadSummary[];
   initialThreadId?: string;
   initialMessages?: UIMessage[];
   // "page" (default) renders the full-page shell with the thread switcher.
   // "panel" fills its parent (the Ask Sheet) and hides the switcher.
   layout?: "page" | "panel";
-  // Called after a turn is sent. Defaults to router.refresh() (page); the panel
-  // passes its own handler to re-fetch threads client-side.
+  // Called after a turn is sent on the full-page layout (refreshes thread list).
   onAfterSend?: () => void;
   // Sent with each turn so the agent can interpret references to the current
   // view. Panel only; the page sends none.
@@ -38,7 +37,7 @@ function getAssistantText(message: UIMessage | undefined): string {
 }
 
 export function ChatSurface({
-  threads,
+  threads = [],
   initialThreadId,
   initialMessages = [],
   layout = "page",
@@ -102,15 +101,18 @@ export function ChatSurface({
       pageContext ? { body: { context: pageContext } } : undefined,
     );
 
-    if (onAfterSend) {
-      onAfterSend();
-    } else {
-      router.refresh();
+    if (layout === "page") {
+      if (onAfterSend) {
+        onAfterSend();
+      } else {
+        router.refresh();
+      }
     }
   }, [
     clearError,
     input,
     isBusy,
+    layout,
     onAfterSend,
     pageContext,
     router,

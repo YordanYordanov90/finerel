@@ -1,11 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 
-import { ChatAccessError, listThreads, loadThreadMessages } from "@/lib/data/chat";
+import { getOwnedThread, listThreads, loadMessages } from "@/lib/data/chat";
 
-// Read-only thread listing for the docked Ask panel, which is client-side and
-// can't use the server-component load path the /chat page uses. With `?thread=`
-// it also returns that thread's messages so the panel can restore the last
-// conversation. Scoped to the signed-in user.
+// Read-only thread helpers for the docked Ask panel (client-side). `?thread=`
+// restores that thread's messages; without it, returns the full thread list for
+// the /chat page switcher if needed. Scoped to the signed-in user.
 export async function GET(request: Request) {
   const { userId } = await auth();
 
@@ -17,28 +16,24 @@ export async function GET(request: Request) {
   const thread = url.searchParams.get("thread") ?? undefined;
 
   try {
-    const threads = await listThreads(userId);
-    const isKnownThread = thread
-      ? threads.some((entry) => entry.id === thread)
-      : false;
+    if (thread) {
+      const owned = await getOwnedThread(userId, thread);
+      const messages = owned ? await loadMessages(thread) : [];
 
-    const messages =
-      thread && isKnownThread
-        ? await loadThreadMessages(userId, thread)
-        : [];
-
-    return Response.json({
-      data: {
-        threads,
-        threadId: isKnownThread ? thread : undefined,
-        messages,
-      },
-    });
-  } catch (error) {
-    if (error instanceof ChatAccessError) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+      return Response.json({
+        data: {
+          threadId: owned ? thread : undefined,
+          messages,
+        },
+      });
     }
 
+    const threads = await listThreads(userId);
+
+    return Response.json({
+      data: { threads },
+    });
+  } catch (error) {
     console.error("[api/chat/threads] database error", {
       userId,
       error: error instanceof Error ? error.message : "unknown",

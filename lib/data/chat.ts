@@ -25,11 +25,14 @@ function extractTextFromParts(parts: UIMessage["parts"]): string {
 export async function createThread(userId: string, id?: string): Promise<string> {
   const threadId = id ?? generateId();
 
-  await db.insert(chatThreads).values({
-    id: threadId,
-    userId,
-    title: null,
-  });
+  await db
+    .insert(chatThreads)
+    .values({
+      id: threadId,
+      userId,
+      title: null,
+    })
+    .onConflictDoNothing({ target: chatThreads.id });
 
   return threadId;
 }
@@ -55,22 +58,31 @@ export async function resolveThreadId(
     return { threadId: await createThread(userId), created: true };
   }
 
-  const owned = await getOwnedThread(userId, threadId);
-  if (owned) {
-    return { threadId, created: false };
-  }
-
   const [existing] = await db
     .select({ userId: chatThreads.userId })
     .from(chatThreads)
     .where(eq(chatThreads.id, threadId))
     .limit(1);
 
-  if (existing && existing.userId !== userId) {
-    throw new ChatAccessError();
+  if (existing) {
+    if (existing.userId !== userId) {
+      throw new ChatAccessError();
+    }
+    return { threadId, created: false };
   }
 
   await createThread(userId, threadId);
+
+  const [created] = await db
+    .select({ userId: chatThreads.userId })
+    .from(chatThreads)
+    .where(eq(chatThreads.id, threadId))
+    .limit(1);
+
+  if (!created || created.userId !== userId) {
+    throw new ChatAccessError();
+  }
+
   return { threadId, created: true };
 }
 
@@ -101,6 +113,24 @@ export async function listThreads(userId: string): Promise<ChatThreadSummary[]> 
   }));
 }
 
+export async function loadMessages(threadId: string): Promise<UIMessage[]> {
+  const rows = await db
+    .select({
+      id: chatMessages.id,
+      role: chatMessages.role,
+      parts: chatMessages.parts,
+    })
+    .from(chatMessages)
+    .where(eq(chatMessages.threadId, threadId))
+    .orderBy(asc(chatMessages.createdAt), desc(chatMessages.role));
+
+  return rows.map((row) => ({
+    id: row.id,
+    role: row.role as MessageRole,
+    parts: row.parts as UIMessage["parts"],
+  }));
+}
+
 export async function loadThreadMessages(
   userId: string,
   threadId: string,
@@ -110,21 +140,7 @@ export async function loadThreadMessages(
     throw new ChatAccessError();
   }
 
-  const rows = await db
-    .select({
-      id: chatMessages.id,
-      role: chatMessages.role,
-      parts: chatMessages.parts,
-    })
-    .from(chatMessages)
-    .where(eq(chatMessages.threadId, threadId))
-    .orderBy(asc(chatMessages.createdAt));
-
-  return rows.map((row) => ({
-    id: row.id,
-    role: row.role as MessageRole,
-    parts: row.parts as UIMessage["parts"],
-  }));
+  return loadMessages(threadId);
 }
 
 export async function appendTurn(
@@ -132,23 +148,29 @@ export async function appendTurn(
   userMessage: UIMessage,
   assistantMessage: UIMessage,
 ): Promise<void> {
-  const now = new Date();
+  const userCreatedAt = new Date();
+  const assistantCreatedAt = new Date(userCreatedAt.getTime() + 1);
 
   await db.transaction(async (tx) => {
-    await tx.insert(chatMessages).values([
-      {
-        id: userMessage.id,
-        threadId,
-        role: userMessage.role,
-        parts: userMessage.parts,
-      },
-      {
-        id: assistantMessage.id,
-        threadId,
-        role: assistantMessage.role,
-        parts: assistantMessage.parts,
-      },
-    ]);
+    await tx
+      .insert(chatMessages)
+      .values([
+        {
+          id: userMessage.id,
+          threadId,
+          role: userMessage.role,
+          parts: userMessage.parts,
+          createdAt: userCreatedAt,
+        },
+        {
+          id: assistantMessage.id,
+          threadId,
+          role: assistantMessage.role,
+          parts: assistantMessage.parts,
+          createdAt: assistantCreatedAt,
+        },
+      ])
+      .onConflictDoNothing({ target: chatMessages.id });
 
     const [thread] = await tx
       .select({ title: chatThreads.title })
@@ -164,7 +186,7 @@ export async function appendTurn(
     await tx
       .update(chatThreads)
       .set({
-        updatedAt: now,
+        updatedAt: assistantCreatedAt,
         ...(thread?.title === null && titleFromMessage
           ? { title: titleFromMessage }
           : {}),

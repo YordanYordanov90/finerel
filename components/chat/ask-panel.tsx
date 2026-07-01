@@ -21,7 +21,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { derivePageContext } from "@/lib/chat/page-context";
-import type { ChatThreadSummary } from "@/lib/data/chat";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "finerel:ask:last-thread";
@@ -103,21 +102,9 @@ function AskPanel({ open, onOpenChange }: AskPanelProps) {
   const pathname = usePathname();
   const pageContext = useMemo(() => derivePageContext(pathname), [pathname]);
 
-  const [threads, setThreads] = useState<ChatThreadSummary[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [ready, setReady] = useState(false);
-
-  const refreshThreads = useCallback(async () => {
-    try {
-      const res = await fetch("/api/chat/threads");
-      if (!res.ok) return;
-      const { data } = await res.json();
-      setThreads(data.threads ?? []);
-    } catch {
-      // Non-fatal — the thread list just won't update this turn.
-    }
-  }, []);
 
   // First open: restore the last conversation, or start a fresh thread.
   useEffect(() => {
@@ -130,17 +117,20 @@ function AskPanel({ open, onOpenChange }: AskPanelProps) {
         : null;
 
     (async () => {
-      let data: {
-        threads?: ChatThreadSummary[];
-        threadId?: string;
-        messages?: UIMessage[];
-      } = {};
+      if (!last) {
+        if (cancelled) return;
+        setActiveThreadId(generateId());
+        setInitialMessages([]);
+        setReady(true);
+        return;
+      }
+
+      let data: { threadId?: string; messages?: UIMessage[] } = {};
 
       try {
-        const url = last
-          ? `/api/chat/threads?thread=${encodeURIComponent(last)}`
-          : "/api/chat/threads";
-        const res = await fetch(url);
+        const res = await fetch(
+          `/api/chat/threads?thread=${encodeURIComponent(last)}`,
+        );
         if (res.ok) {
           ({ data } = await res.json());
         }
@@ -150,13 +140,11 @@ function AskPanel({ open, onOpenChange }: AskPanelProps) {
 
       if (cancelled) return;
 
-      setThreads(data.threads ?? []);
-
-      if (last && data.threadId === last && (data.messages?.length ?? 0) > 0) {
+      if (data.threadId === last && (data.messages?.length ?? 0) > 0) {
         setActiveThreadId(last);
         setInitialMessages(data.messages ?? []);
       } else {
-        if (last) window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(STORAGE_KEY);
         setActiveThreadId(generateId());
         setInitialMessages([]);
       }
@@ -180,10 +168,6 @@ function AskPanel({ open, onOpenChange }: AskPanelProps) {
     setActiveThreadId(generateId());
     setInitialMessages([]);
   }, []);
-
-  const handleAfterSend = useCallback(() => {
-    void refreshThreads();
-  }, [refreshThreads]);
 
   const handleExpand = useCallback(() => {
     if (activeThreadId) {
@@ -242,10 +226,8 @@ function AskPanel({ open, onOpenChange }: AskPanelProps) {
           <ChatSurface
             key={activeThreadId}
             layout="panel"
-            threads={threads}
             initialThreadId={activeThreadId}
             initialMessages={initialMessages}
-            onAfterSend={handleAfterSend}
             pageContext={pageContext}
           />
         ) : (
