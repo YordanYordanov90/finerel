@@ -1,7 +1,9 @@
+import { relations } from "drizzle-orm";
 import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   real,
   serial,
@@ -100,3 +102,46 @@ export const relationships = pgTable(
     index("idx_relationships_user_type").on(table.userId, table.relationType),
   ],
 );
+
+export const chatThreads = pgTable(
+  "chat_threads",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id),
+    title: text("title"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_chat_threads_user_updated").on(table.userId, table.updatedAt),
+  ],
+);
+
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: text("id").primaryKey(),
+    threadId: text("threadId")
+      .notNull()
+      .references(() => chatThreads.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    parts: jsonb("parts").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_chat_messages_thread_created").on(table.threadId, table.createdAt),
+  ],
+);
+
+export const chatThreadsRelations = relations(chatThreads, ({ many }) => ({
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  thread: one(chatThreads, {
+    fields: [chatMessages.threadId],
+    references: [chatThreads.id],
+  }),
+}));

@@ -24,6 +24,7 @@
 
 - `app/api/cron/` — Vercel API routes for QStash-triggered cron jobs. Owns the morning briefing pipeline: news fetching, relationship extraction, email delivery, and persistence writes. Never accessed directly by users.
 - `lib/agent/` — Agent infrastructure: QStash verification helper, env validation, and agent tool implementations.
+- `app/api/chat/` — The **Watchlist Agent**: an interactive, in-app `streamText` tool-calling loop the user chats with. Read-only, `userId`-scoped tools over already-stored data; never writes or sends email. Runs per user message (no QStash, no schedule). Full design specs live in `agent/` — see [`agent/agent-plan.md`](agent/agent-plan.md) (backbone), [`agent/chat-schema.md`](agent/chat-schema.md), [`agent/chat-tools.md`](agent/chat-tools.md), [`agent/chat-ui.md`](agent/chat-ui.md).
 - `app/` — Next.js App Router pages. Owns all user-facing UI: dashboard, landing page, demo mode, settings, auth flows.
 - `app/api/` — Next.js API routes. Owns read operations, dashboard data queries, Clerk webhook handling, and cron endpoints.
 - `lib/db/` — Drizzle ORM schema, migrations, and query helpers. Shared across all routes.

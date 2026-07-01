@@ -1,139 +1,146 @@
-# Briefing Agent — Plan
+# Watchlist Agent — Plan
 
 **Status:** Design
-**Last updated:** June 26, 2026
-**Next doc:** `tools-and-decision.md` (derives the tool set + decision logic from this file)
+**Last updated:** June 29, 2026
+**Next docs:** `chat-schema.md` (thread persistence tables), `chat-tools.md` (read-only tool set), `chat-ui.md` (the chat surface) — all derive from this file.
 
 ---
 
 ## 1. Purpose
 
-The Briefing Agent decides, unattended, **whether FinRel has something worth
-telling a user today — and if so, what to say.**
+The Watchlist Agent is an **interactive, in-app agent the user chats with about
+their own watchlist.** It answers questions, explains the relationships and news
+Finerel has already extracted, and reasons across the user's data on demand —
+"what changed for NVDA this week?", "why did you flag the TSMC partnership?",
+"which of my tickers is most connected?"
 
-Today the morning run is a fixed pipeline: `fetch → extract → store → email`. It
-always sends, so quiet days produce empty emails and noise. The agent replaces
-the **email-decision step** of that pipeline with a real agent loop: it gathers
-context with tools, judges significance, and chooses an outcome (send, stay
-silent, or send a weekly digest). The user pays for the trust that an email
-arriving always means it's worth opening, and silence never means they missed
-something.
+It is a **new surface, not a replacement.** The morning briefing pipeline
+(`fetch → extract → store → email`) stays exactly as it is today: deterministic,
+always-on, untouched. The agent reads the same stored data the pipeline produces
+and turns it into a conversation. The user gets two things from one dataset — a
+daily email they don't have to ask for, and an agent they can interrogate when
+they want more.
 
-This is the project's headline capability — an autonomous agent that monitors a
-watchlist and decides when to speak — not just an LLM that fills a template.
+This is the project's headline interactive capability — an agent that knows your
+watchlist and can talk about it — not just an LLM with a chat box.
 
 ---
 
 ## 2. What it is (and is not)
 
-**It is** a tool-driven agent loop. Given a goal and a set of read-only tools, it
-calls tools to gather what it needs, reasons over the result, and emits a single
-structured decision. Uses `models.briefing` via the Vercel AI SDK's tool-calling
-loop (`generateText` with tools), not a one-shot call.
+**It is** a tool-driven chat loop. Given the user's question and a set of
+read-only, `userId`-scoped tools, it calls tools to gather what it needs, reasons
+over the result, and streams an answer. Uses `models.chat` via the Vercel AI
+SDK's tool-calling loop (`streamText` with tools), across multiple turns.
 
 **It is not** the extractor. `extract_relationships` stays a deterministic
 `generateObject` call — structured extraction needs a fixed schema and
-reliability, not a loop. The agent loop belongs only where there is genuine
-**judgment**: deciding whether today clears the bar and which message to compose.
+reliability, not a loop. **It is not** the email pipeline, and it does not decide
+whether to send email — that path is unchanged and deterministic. The agent loop
+belongs only where there is genuine **judgment and open-ended interaction**:
+holding a conversation across the user's data.
 
-> This boundary is deliberate. The skill being demonstrated is knowing *where* an
-> agent loop earns its place and where a constrained call is the correct tool.
-
----
-
-## 3. When it runs
-
-No new schedule. It runs inside the **existing hourly QStash tick**
-(`0 3-19 * * *` UTC), per user, at their configured `briefingTime` hour (EEST).
-Scheduling stays in app logic — the cron is just a heartbeat.
-
-Per user, per qualifying tick:
-
-- The extraction pipeline runs first (fetch → extract → store) so the day's data
-  exists in the DB.
-- The agent then runs **once** to decide what to do about the email.
-- Calling code passes plain context the agent should not have to derive itself:
-  `isWeeklyDigestDay` (e.g. Monday), the user's cadence preference, and today's
-  date. The agent decides; the code supplies the calendar facts.
+> This boundary is deliberate. A multi-turn conversation over the watchlist graph
+> — variable tool paths, follow-ups, memory — is where an agent loop earns its
+> place. A fixed pipeline step does not.
 
 ---
 
-## 4. What it does each run (the loop)
+## 3. Where it lives and when it runs
 
-1. **Gather** — calls read-only tools to assemble the picture: today's stored
-   relationships, recent watchlist news, graph stats / growth, and the last
-   briefing sent (to avoid repeating itself). It calls only the tools it needs
-   for the decision in front of it.
-2. **Assess** — judges the day's significance from what it gathered: are there
-   new relationships of real weight (impact + confidence)? notable news
-   clustering? meaningful graph growth since last time?
-3. **Decide** — emits exactly one outcome (see §5).
-4. **Compose** — for a sending outcome, writes the email content (subject framed
-   by the single best item, plus body). For a hold, writes a short logged reason
-   and nothing else.
-5. **Hand off** — returns a structured result. Deterministic code does the
-   actual send and enforces *who* and *security* (see §6).
+In the app, on demand. The agent runs **per user message**, inside an
+authenticated chat surface in the `(app)` route group — not on a schedule, not in
+the cron. There is no new QStash resource and no per-user job.
 
-The loop terminates when the agent returns its final structured decision. A hard
-cap on tool-call steps prevents runaway loops; on error or cap-hit it falls back
-to **hold** (silence is the safe default — never send garbage).
+Every run is scoped to the signed-in user. The recipient of an answer is always
+the person asking; the agent only ever sees data filtered by their `userId`.
 
 ---
 
-## 5. How it decides
+## 4. What it does each turn (the loop)
 
-The agent returns one of three outcomes:
+1. **Gather** — calls read-only tools to assemble what the question needs:
+   watchlist tickers, stored relationships (filtered by ticker / type /
+   confidence / date), recent news, graph stats, past briefings. It calls only
+   the tools the current question requires.
+2. **Reason** — interprets the user's intent over what it gathered, comparing,
+   ranking, and explaining as needed.
+3. **Answer** — streams a grounded reply that cites the user's own data. When the
+   data doesn't support an answer, it says so rather than inventing one.
 
-| Outcome | When | Result |
+The loop terminates when the agent emits its final message for the turn. A hard
+cap on tool-call steps prevents runaway loops; on error or cap-hit it returns a
+plain "couldn't complete that" rather than a fabricated answer.
+
+---
+
+## 5. The tool set
+
+All tools are **read-only and `userId`-scoped server-side.** They wrap query
+paths that already exist for the dashboard, so the agent and the UI read through
+the same logic. The agent is never forced to call every tool — it chooses the
+path the question requires, and that choosing *is* the agent loop.
+
+| Tool | Reads | Answers questions like |
 | --- | --- | --- |
-| `SEND_DAILY` | The day clears the significance bar — new relationships of real weight, or a notable news cluster. | Composes + sends the daily briefing, subject framed by its best item. |
-| `HOLD` | Below the bar — nothing, or only low-value noise. | Sends nothing. Logs the reasoning. Data still lives in the dashboard and rolls into the next digest. |
-| `SEND_WEEKLY_DIGEST` | `isWeeklyDigestDay` is true. | Composes + sends the weekly synthesis (week's top relationships, heating-up pairs, graph growth, most-active tickers) regardless of whether today alone cleared the bar — guarantees a heartbeat. |
+| `get_watchlist` | `watchlists` | "what am I tracking?" |
+| `query_relationships` | `relationships` (ticker / type / confidence / date filters) | "show NVDA partnerships this month, high confidence" |
+| `get_graph_stats` | graph aggregates | "which company is most connected?" |
+| `search_news` | `news_items` | "what drove the TSMC mention last week?" |
+| `get_briefing_history` | `briefings` | "what did you tell me on Monday?" |
 
-**The significance bar is the agent's judgment, not a hardcoded threshold.** It
-weighs impact level, confidence, novelty (vs. the last briefing), and news
-clustering. The reasoning is captured so it can be logged and shown — the
-decision is auditable, which is itself a talking point.
-
-**Tool selection** is driven by what the agent still needs to decide. It is not
-forced to call every tool: a day with obvious high-impact relationships may need
-only `get_todays_relationships`; a quiet day may pull news and graph stats before
-concluding `HOLD`; a weekly-digest day pulls the week's aggregates. The agent
-chooses its path through the tools — that choosing *is* the agent loop.
+No tool writes, sends, or mutates. Write actions (e.g. adding a ticker) and any
+send capability are explicit future scope, not part of this agent's contract.
 
 ---
 
-## 6. Boundaries — model decides content, code enforces trust
+## 6. Memory
 
-A hard line, same pattern as `extract_relationships`:
+**v1: conversation memory only.** Threads persist so a conversation survives
+reload and can be resumed — `chat_threads` + `chat_messages`, both `userId`-scoped
+(schema lives in `chat-schema.md`). The agent loads the thread's prior messages
+as context each turn and saves the new turn when it completes.
 
-- **The agent decides** *what* to say and *whether* to say it.
-- **Deterministic code enforces** *who* it goes to (recipient from `users`,
-  scoped by `userId`), *that* it's allowed, and *records* it. The agent never
-  sets the recipient, never bypasses the `userId` scope, never writes to the DB
-  directly — its tools are read-only.
-
-The briefing record is stored regardless of the send outcome, so the dashboard
-and history stay accurate even when the agent holds.
+**Deferred (not v1):** durable user facts (preferences, holdings, focus areas the
+agent remembers across threads) and semantic recall over past messages. Both are
+clean later additions; neither is required to ship the conversation.
 
 ---
 
-## 7. Non-goals
+## 7. Boundaries — model decides content, code enforces trust
+
+A hard line, same pattern as the rest of the system:
+
+- **The agent decides** *what* to say.
+- **Deterministic code enforces** *who* it answers (the signed-in user), *that*
+  every tool is scoped by `userId`, and *that* the tools are read-only. The agent
+  never sets the recipient, never bypasses the `userId` scope, never writes to the
+  DB, and never reaches another user's data.
+
+The email pipeline's own boundaries are unchanged — this agent does not touch
+that path.
+
+---
+
+## 8. Non-goals
 
 - No buy/sell signals, prices, or recommendations — unchanged from the spec.
-- The agent does not fetch news or run extraction; it consumes their stored
-  output via tools.
-- No new schedules, no per-user QStash resources.
-- No multi-hop graph reasoning — it reads stats and lists, not a graph traversal.
+- Does not replace, gate, or modify the morning briefing email pipeline.
+- Does not fetch news or run extraction; it consumes their stored output via
+  tools.
+- No write or send actions in v1 — read-only only.
+- No durable cross-thread memory or semantic recall in v1.
+- No new schedules or per-user QStash resources.
 
 ---
 
-## 8. What success looks like
+## 9. What success looks like
 
-- Quiet days are silent; sending days always carry a clearly-best item in the
-  subject.
-- A weekly digest always lands, telling the compounding-value story.
-- The decision and its reasoning are logged for every run.
-- In an interview, the loop, the tool set, the structured-call-vs-agent-loop
-  boundary, and the model-decides-vs-code-enforces split can each be explained in
-  a sentence.
+- A user can open the chat and get grounded answers about their watchlist that
+  cite their own stored data, not generic market commentary.
+- Conversations persist and can be resumed.
+- The agent calls only the tools a question needs, and its answers never claim
+  data it didn't retrieve.
+- In an interview, the chat loop, the read-only `userId`-scoped tool set, the
+  structured-call-vs-agent-loop boundary, and the "new surface, email untouched"
+  decision can each be explained in a sentence.

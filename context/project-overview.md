@@ -50,6 +50,15 @@ intelligence, never makes buy/sell recommendations.
 - Watchlist management: add/remove tickers, view activity per ticker
 - Settings: email address display (read-only, from Clerk), briefing time preference
 
+### Conversational Agent (Design)
+
+- In-app **Watchlist Agent** the user chats with about their own watchlist —
+  answers questions and explains stored relationships, news, and graph stats via
+  read-only `userId`-scoped tools. Pure addition; the morning briefing email stays
+  unchanged. Conversation history persists per thread.
+- Full design specs in [`agent/`](agent/agent-plan.md) — backbone plus schema,
+  tools, and chat-UI docs.
+
 ### Portfolio / Demo Experience
 
 - Public landing page explaining the product with clear value proposition
