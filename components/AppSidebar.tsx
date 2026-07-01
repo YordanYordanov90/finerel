@@ -4,6 +4,7 @@ import {
   Clock3,
   LayoutDashboard,
   List,
+  MessageSquare,
   Network,
   Newspaper,
   Settings,
@@ -15,6 +16,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/news", label: "News", icon: Newspaper },
+  { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/graph", label: "Graph", icon: Network },
   { href: "/history", label: "History", icon: Clock3 },
   { href: "/watchlist", label: "Watchlist", icon: List },

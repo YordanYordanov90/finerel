@@ -1,7 +1,5 @@
-import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
-
 import { getAuthOrDemoUserId } from "@/lib/auth";
-import { db, relationships } from "@/lib/db";
+import { queryRelationships } from "@/lib/data/relationships";
 import { relationshipsQuerySchema } from "@/lib/schemas/api-params";
 
 export async function GET(request: Request) {
@@ -20,75 +18,30 @@ export async function GET(request: Request) {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  const { ticker, relationType, minConfidence, startDate, endDate, briefingId, limit, offset } =
-    parsed.data;
-
-  const conditions = [eq(relationships.userId, userId)];
-
-  if (ticker) {
-    conditions.push(
-      or(
-        eq(relationships.sourceTicker, ticker),
-        eq(relationships.targetTicker, ticker),
-      )!,
-    );
-  }
-
-  if (relationType) {
-    conditions.push(eq(relationships.relationType, relationType));
-  }
-
-  if (minConfidence !== undefined) {
-    conditions.push(gte(relationships.confidence, minConfidence));
-  }
-
-  if (startDate) {
-    conditions.push(gte(relationships.extractedAt, new Date(startDate)));
-  }
-
-  if (endDate) {
-    conditions.push(lte(relationships.extractedAt, new Date(`${endDate}T23:59:59.999Z`)));
-  }
-
-  if (briefingId !== undefined) {
-    conditions.push(eq(relationships.briefingId, briefingId));
-  }
-
-  const where = and(...conditions);
+  const {
+    ticker,
+    relationType,
+    minConfidence,
+    startDate,
+    endDate,
+    briefingId,
+    limit,
+    offset,
+  } = parsed.data;
 
   try {
-    const [rows, [{ total }]] = await Promise.all([
-      db
-        .select()
-        .from(relationships)
-        .where(where)
-        .orderBy(desc(relationships.extractedAt))
-        .limit(limit)
-        .offset(offset),
-      db
-        .select({ total: count() })
-        .from(relationships)
-        .where(where),
-    ]);
-
-    return Response.json({
-      data: {
-        relationships: rows.map((r) => ({
-          id: r.id,
-          sourceCompany: r.sourceCompany,
-          sourceTicker: r.sourceTicker,
-          targetCompany: r.targetCompany,
-          targetTicker: r.targetTicker,
-          relationType: r.relationType,
-          confidence: r.confidence,
-          impactLevel: r.impactLevel,
-          contextSnippet: r.contextSnippet,
-          sourceUrl: r.sourceUrl,
-          extractedAt: r.extractedAt.toISOString(),
-        })),
-        total,
-      },
+    const result = await queryRelationships(userId, {
+      ticker,
+      relationType,
+      minConfidence,
+      startDate,
+      endDate,
+      briefingId,
+      limit,
+      offset,
     });
+
+    return Response.json({ data: result });
   } catch (error) {
     console.error("[api/relationships] database error", {
       error: error instanceof Error ? error.message : "unknown",

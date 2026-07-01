@@ -29,8 +29,30 @@ Update this file after every meaningful implementation change.
 | 21 | [Settings PATCH + Interactive Time Picker](features/21-settings-patch.md) | ✅ Done |
 | 22 | [HTML Briefing Email](features/22-html-email.md) | ✅ Done |
 | 23 | [News Feed Page](features/23-news-feed.md) | ✅ Done |
+| 24 | [Chat Persistence Schema](features/24-chat-schema.md) | ✅ Done |
+| 25 | [Chat Agent Tools](features/25-chat-tools.md) | ✅ Done |
+| 26 | [Chat API Route](features/26-chat-api-route.md) | ✅ Done |
+| 27 | [Chat UI](features/27-chat-ui.md) | ✅ Done |
 
-**Progress: 23 / 23 features complete**
+**Progress: 23 / 23 Phase 1 features complete · Chat Agent 4 / 4 (end-to-end)**
+
+---
+
+## Chat Agent (Design stage)
+
+In-app conversational Watchlist Agent — design specs live in [`agent/`](agent/agent-plan.md):
+
+| Doc | Covers |
+|-----|--------|
+| [agent-plan.md](agent/agent-plan.md) | Backbone — purpose, loop, boundaries |
+| [chat-schema.md](agent/chat-schema.md) | `chat_threads` + `chat_messages` persistence |
+| [chat-tools.md](agent/chat-tools.md) | Read-only, `userId`-scoped tool set |
+| [chat-ui.md](agent/chat-ui.md) | Chat surface (shadcn Message primitives + `useChat`) |
+
+Build sheets derived from these specs are features **24–27** (above), to be
+implemented one at a time in order: schema → tools → API route → UI.
+
+Status: **complete** — Watchlist Agent ships end-to-end (features 24–27).
 
 ---
 
@@ -44,6 +66,12 @@ Deployed to production (finerel.vercel.app). QStash schedule live (`0 3-19 * * *
 
 ## Completed
 
+- **Fix: chat persistence dropped every turn after the first** (June 29, 2026). `toUIMessageStreamResponse` was persisting the assistant message with an **empty-string id**; since `chat_messages.id` is the PK, only the first-ever assistant row inserted and every later turn (page or panel) threw `duplicate key … chat_messages_pkey` in `appendTurn` → thread row created but no messages (showed as "New conversation", no history). Fix in `app/api/chat/route.ts`: pass `generateMessageId: generateId` + defensive `id || generateId()` fallback before `appendTurn`. Deleted the empty artifact threads. This was a latent bug masked because only one assistant message had ever persisted.
+- **Ask panel + page-context seeding + branding fix** (June 29, 2026). Feature 27 (docked panel) + feature 26 (context). Right-side `Sheet` in `components/chat/ask-panel.tsx` reuses `ChatSurface` via a new `layout="panel"` prop (page nav unchanged). `AskChatProvider` mounts it shell-wide in `app/(app)/layout.tsx`; `AskChatLauncher` in the navbar opens it (labeled "Ask", not a floating bubble; renders null outside the provider so demo is unaffected). Panel keeps its own active thread in `localStorage` (`finerel:ask:last-thread`); "Open in full page" hands off to `/chat?thread=`. New `GET /api/chat/threads` lists threads (+messages with `?thread=`) for the client-side panel. `/api/chat` now accepts an optional sanitized `context` field (`page` + optional `focus.ticker`), injected into `system` for that turn only — never persisted, never affects `userId`/tool scope; `lib/chat/page-context.ts` derives it from the pathname (passed per-call via `sendMessage` body). System prompt corrected **FinRel → Finerel** (last shipped-code instance). `tsc` + `eslint` clean; routes compile in dev.
+- **Chat UI** (June 29, 2026). Feature 27 — `/chat` in dashboard shell with sidebar nav (`MessageSquare`). `components/chat/*`: `ChatSurface` (`useChat` + `DefaultChatTransport` → `/api/chat`), `ThreadSwitcher`, `ChatPromptInput`, markdown + tool-call chip rendering, empty/streaming/error states. shadcn `message` + `textarea` via CLI. Thread routing via `?thread=` search param; server loads history from `lib/data/chat.ts`.
+- **Chat API route** (June 29, 2026). Feature 26 — `POST /api/chat` streams via `streamText` + `buildChatTools(userId)`, `stopWhen: stepCountIs(5)`, `maxDuration = 60`. Persistence in `lib/data/chat.ts` (`resolveThreadId`, `loadThreadMessages`, `appendTurn`). `models.chat` = `gpt-4.1`. Wrapped with `protectAiRoute()`. **Request:** `{ threadId?: string, id?: string, message: { id, role: "user", parts } }` (useChat `id` accepted as alias). **Response:** SSE UI message stream; `X-Thread-Id` header on new threads. Demo users stream read-only — no persistence.
+- **Chat agent tools** (June 29, 2026). Feature 25 — `buildChatTools(userId)` in `lib/agent/chat-tools.ts` (five read-only tools: `get_watchlist`, `query_relationships`, `get_graph_stats`, `search_news`, `get_briefing_history`). Shared `userId`-scoped query layer in `lib/data/{relationships,watchlist,news,briefings,graph-stats}.ts`. `app/api/relationships/route.ts` refactored onto `queryRelationships()` — no duplicated filter logic.
+- **Chat persistence schema** (June 29, 2026). Feature 24 — `chat_threads` + `chat_messages` tables in `lib/db/schema.ts` with Drizzle relations (`chatThreadsRelations`, `chatMessagesRelations`). `parts` stored as `jsonb`; `chat_messages.threadId` cascades on thread delete. Indexes: `idx_chat_threads_user_updated`, `idx_chat_messages_thread_created`. Migration `lib/db/migrations/0002_strong_donald_blake.sql` generated and applied to Neon.
 - Specification v1.0 (`financial-researcher-agent.md`) — finalized.
 - Architecture and all six context files — populated from grill session (June 11, 2026).
 - **Drizzle schema & Neon connection** (June 14, 2026):
@@ -163,8 +191,9 @@ Deployed to production (finerel.vercel.app). QStash schedule live (`0 3-19 * * *
 
 ## Next Up
 
-1. Verify a custom domain in Resend to enable sending briefing emails to users other than the owner.
-2. Per-user briefing time in the cron is respected — but `briefingTime` only supports full-hour values. Settings UI enforces this (dropdown, whole hours only).
+1. Deploy chat agent to production and smoke-test a multi-turn conversation with tool calls.
+2. Verify a custom domain in Resend to enable sending briefing emails to users other than the owner.
+3. Per-user briefing time in the cron is respected — but `briefingTime` only supports full-hour values. Settings UI enforces this (dropdown, whole hours only).
 
 ## Open Questions
 

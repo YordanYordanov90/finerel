@@ -295,6 +295,20 @@ body {
   );
 }
 
+/* Floating "Ask" launcher: gentle idle float + attention pulse ring. */
+@keyframes fr-ask-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes fr-ask-pulse {
+  0% { transform: scale(1); opacity: 0.45; }
+  70%, 100% { transform: scale(1.9); opacity: 0; }
+}
+
+.fr-ask-float { animation: fr-ask-float 3.2s ease-in-out infinite; }
+.fr-ask-pulse { animation: fr-ask-pulse 2.6s ease-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .lp-anim-draw,
   .lp-anim-rise,
@@ -303,6 +317,10 @@ body {
   }
   .lp-anim-draw { stroke-dashoffset: 0; }
   .lp-anim-rise { opacity: 1; transform: none; }
+  .fr-ask-float,
+  .fr-ask-pulse {
+    animation: none;
+  }
 }
 
 :root {
